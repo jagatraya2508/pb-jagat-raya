@@ -1,0 +1,484 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import {
+    ArrowLeft, Plus, Search, Edit, Trash2, X, Eye,
+    Users, Trophy, Home, LogOut, BarChart3, Save, Calendar
+} from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
+import './MemberManagement.css'
+
+function TournamentManagement() {
+    const { signOut } = useAuth()
+    const [tournaments, setTournaments] = useState([])
+    const [registrations, setRegistrations] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [showModal, setShowModal] = useState(false)
+    const [showRegistrationsModal, setShowRegistrationsModal] = useState(false)
+    const [selectedTournament, setSelectedTournament] = useState(null)
+    const [editingTournament, setEditingTournament] = useState(null)
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        location: '',
+        start_date: '',
+        end_date: '',
+        registration_deadline: '',
+        categories: 'Tunggal Putra, Tunggal Putri, Ganda Putra, Ganda Putri, Ganda Campuran',
+        max_participants: 100,
+        status: 'open'
+    })
+
+    useEffect(() => {
+        fetchTournaments()
+    }, [])
+
+    const fetchTournaments = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('tournaments')
+                .select('*')
+                .order('start_date', { ascending: false })
+
+            if (error) throw error
+            setTournaments(data || [])
+        } catch (error) {
+            console.error('Error fetching tournaments:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const fetchRegistrations = async (tournamentId) => {
+        try {
+            const { data, error } = await supabase
+                .from('tournament_registrations')
+                .select('*')
+                .eq('tournament_id', tournamentId)
+                .order('created_at', { ascending: false })
+
+            if (error) throw error
+            setRegistrations(data || [])
+        } catch (error) {
+            console.error('Error fetching registrations:', error)
+        }
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault()
+        try {
+            if (editingTournament) {
+                const { error } = await supabase
+                    .from('tournaments')
+                    .update(formData)
+                    .eq('id', editingTournament.id)
+                if (error) throw error
+            } else {
+                const { error } = await supabase
+                    .from('tournaments')
+                    .insert([formData])
+                if (error) throw error
+            }
+
+            fetchTournaments()
+            closeModal()
+        } catch (error) {
+            console.error('Error saving tournament:', error)
+            alert('Gagal menyimpan data. Pastikan Supabase sudah dikonfigurasi.')
+        }
+    }
+
+    const handleDelete = async (id) => {
+        if (!confirm('Yakin ingin menghapus kejuaraan ini?')) return
+
+        try {
+            const { error } = await supabase
+                .from('tournaments')
+                .delete()
+                .eq('id', id)
+            if (error) throw error
+            fetchTournaments()
+        } catch (error) {
+            console.error('Error deleting tournament:', error)
+        }
+    }
+
+    const openEditModal = (tournament) => {
+        setEditingTournament(tournament)
+        setFormData({
+            name: tournament.name,
+            description: tournament.description || '',
+            location: tournament.location || '',
+            start_date: tournament.start_date || '',
+            end_date: tournament.end_date || '',
+            registration_deadline: tournament.registration_deadline || '',
+            categories: tournament.categories || '',
+            max_participants: tournament.max_participants || 100,
+            status: tournament.status
+        })
+        setShowModal(true)
+    }
+
+    const openAddModal = () => {
+        setEditingTournament(null)
+        setFormData({
+            name: '',
+            description: '',
+            location: '',
+            start_date: '',
+            end_date: '',
+            registration_deadline: '',
+            categories: 'Tunggal Putra, Tunggal Putri, Ganda Putra, Ganda Putri, Ganda Campuran',
+            max_participants: 100,
+            status: 'open'
+        })
+        setShowModal(true)
+    }
+
+    const openRegistrationsModal = async (tournament) => {
+        setSelectedTournament(tournament)
+        await fetchRegistrations(tournament.id)
+        setShowRegistrationsModal(true)
+    }
+
+    const closeModal = () => {
+        setShowModal(false)
+        setEditingTournament(null)
+    }
+
+    const filteredTournaments = tournaments.filter(t =>
+        t.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '-'
+        return new Date(dateString).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        })
+    }
+
+    return (
+        <div className="admin-layout">
+            <aside className="admin-sidebar">
+                <div className="sidebar-header">
+                    <div className="sidebar-logo">
+                        <Trophy size={24} />
+                    </div>
+                    <div className="sidebar-brand">
+                        <span className="sidebar-brand-name">PB. JAGAT RAYA</span>
+                        <span className="sidebar-brand-label">Admin Panel</span>
+                    </div>
+                </div>
+
+                <nav className="sidebar-nav">
+                    <Link to="/admin" className="sidebar-link">
+                        <BarChart3 size={20} />
+                        Dashboard
+                    </Link>
+                    <Link to="/admin/members" className="sidebar-link">
+                        <Users size={20} />
+                        Anggota
+                    </Link>
+                    <Link to="/admin/tournaments" className="sidebar-link active">
+                        <Trophy size={20} />
+                        Kejuaraan
+                    </Link>
+                </nav>
+
+                <div className="sidebar-footer">
+                    <Link to="/" className="sidebar-link">
+                        <Home size={20} />
+                        Ke Website
+                    </Link>
+                    <button onClick={signOut} className="sidebar-link sidebar-logout">
+                        <LogOut size={20} />
+                        Logout
+                    </button>
+                </div>
+            </aside>
+
+            <main className="admin-main">
+                <header className="admin-header">
+                    <div className="admin-header-content">
+                        <div className="header-title-group">
+                            <Link to="/admin" className="back-link">
+                                <ArrowLeft size={20} />
+                            </Link>
+                            <div>
+                                <h1>Kelola Kejuaraan</h1>
+                                <p>Atur kejuaraan dan lihat pendaftaran</p>
+                            </div>
+                        </div>
+                        <button className="btn btn-accent" onClick={openAddModal}>
+                            <Plus size={20} />
+                            Tambah Kejuaraan
+                        </button>
+                    </div>
+                </header>
+
+                <div className="admin-content">
+                    {/* Search */}
+                    <div className="search-bar">
+                        <Search size={20} />
+                        <input
+                            type="text"
+                            placeholder="Cari kejuaraan..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Tournaments Table */}
+                    <div className="table-container">
+                        <table className="table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Kejuaraan</th>
+                                    <th>Lokasi</th>
+                                    <th>Tanggal</th>
+                                    <th>Deadline</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="6" className="table-empty">
+                                            <div className="spinner"></div>
+                                        </td>
+                                    </tr>
+                                ) : filteredTournaments.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" className="table-empty">
+                                            {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada kejuaraan'}
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filteredTournaments.map((tournament) => (
+                                        <tr key={tournament.id}>
+                                            <td className="member-name">{tournament.name}</td>
+                                            <td>{tournament.location || '-'}</td>
+                                            <td>{formatDate(tournament.start_date)}</td>
+                                            <td>{formatDate(tournament.registration_deadline)}</td>
+                                            <td>
+                                                <span className={`badge badge-${tournament.status === 'open' ? 'success' : tournament.status === 'closed' ? 'danger' : 'warning'}`}>
+                                                    {tournament.status === 'open' ? 'Buka' : tournament.status === 'closed' ? 'Tutup' : 'Selesai'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div className="table-actions">
+                                                    <button
+                                                        className="action-btn view"
+                                                        onClick={() => openRegistrationsModal(tournament)}
+                                                        title="Lihat Pendaftar"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="action-btn edit"
+                                                        onClick={() => openEditModal(tournament)}
+                                                    >
+                                                        <Edit size={16} />
+                                                    </button>
+                                                    <button
+                                                        className="action-btn delete"
+                                                        onClick={() => handleDelete(tournament.id)}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+
+            {/* Add/Edit Modal */}
+            {showModal && (
+                <div className="modal-overlay" onClick={closeModal}>
+                    <div className="modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>{editingTournament ? 'Edit Kejuaraan' : 'Tambah Kejuaraan'}</h2>
+                            <button className="modal-close" onClick={closeModal}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label className="form-label">Nama Kejuaraan *</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Deskripsi</label>
+                                    <textarea
+                                        className="form-input"
+                                        rows="3"
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Lokasi</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={formData.location}
+                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Tanggal Mulai</label>
+                                        <input
+                                            type="date"
+                                            className="form-input"
+                                            value={formData.start_date}
+                                            onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Tanggal Selesai</label>
+                                        <input
+                                            type="date"
+                                            className="form-input"
+                                            value={formData.end_date}
+                                            onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Deadline Pendaftaran</label>
+                                        <input
+                                            type="date"
+                                            className="form-input"
+                                            value={formData.registration_deadline}
+                                            onChange={(e) => setFormData({ ...formData, registration_deadline: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Maks. Peserta</label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            value={formData.max_participants}
+                                            onChange={(e) => setFormData({ ...formData, max_participants: parseInt(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Kategori (pisahkan dengan koma)</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={formData.categories}
+                                        onChange={(e) => setFormData({ ...formData, categories: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Status</label>
+                                    <select
+                                        className="form-input"
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                    >
+                                        <option value="open">Buka</option>
+                                        <option value="closed">Tutup</option>
+                                        <option value="completed">Selesai</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="modal-footer">
+                                <button type="button" className="btn btn-ghost" onClick={closeModal}>
+                                    Batal
+                                </button>
+                                <button type="submit" className="btn btn-accent">
+                                    <Save size={18} />
+                                    Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Registrations Modal */}
+            {showRegistrationsModal && selectedTournament && (
+                <div className="modal-overlay" onClick={() => setShowRegistrationsModal(false)}>
+                    <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Pendaftar - {selectedTournament.name}</h2>
+                            <button className="modal-close" onClick={() => setShowRegistrationsModal(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="modal-body">
+                            {registrations.length === 0 ? (
+                                <p className="empty-text">Belum ada pendaftar</p>
+                            ) : (
+                                <div className="table-container">
+                                    <table className="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nama</th>
+                                                <th>Email</th>
+                                                <th>Telepon</th>
+                                                <th>Kategori</th>
+                                                <th>Tanggal Daftar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {registrations.map((reg) => (
+                                                <tr key={reg.id}>
+                                                    <td className="member-name">{reg.participant_name}</td>
+                                                    <td>{reg.email}</td>
+                                                    <td>{reg.phone}</td>
+                                                    <td>
+                                                        <span className="badge badge-info">{reg.category}</span>
+                                                    </td>
+                                                    <td>{formatDate(reg.created_at)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => setShowRegistrationsModal(false)}>
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+export default TournamentManagement
