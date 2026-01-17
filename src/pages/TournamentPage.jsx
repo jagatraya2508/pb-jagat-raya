@@ -37,11 +37,22 @@ function TournamentPage() {
 
     const handleRegister = (tournament) => {
         setSelectedTournament(tournament)
+
+        let firstCategory = ''
+        try {
+            const parsed = JSON.parse(tournament.categories)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                firstCategory = parsed[0].name
+            }
+        } catch {
+            firstCategory = tournament.categories?.split(',')[0]?.trim() || ''
+        }
+
         setFormData({
             participant_name: '',
             email: '',
             phone: '',
-            category: tournament.categories?.split(',')[0]?.trim() || '',
+            category: firstCategory,
             partner_name: ''
         })
         setShowForm(true)
@@ -71,7 +82,18 @@ function TournamentPage() {
         })
     }
 
-    const categories = selectedTournament?.categories?.split(',').map(c => c.trim()) || []
+    const parseCategories = (categoriesData) => {
+        if (!categoriesData) return []
+        try {
+            const parsed = JSON.parse(categoriesData)
+            if (Array.isArray(parsed)) return parsed
+            return []
+        } catch {
+            return categoriesData.split(',').map(c => ({ name: c.trim(), fee: null }))
+        }
+    }
+
+    const categories = selectedTournament ? parseCategories(selectedTournament.categories) : []
     const isDoubles = formData.category?.toLowerCase().includes('ganda')
 
     return (
@@ -141,11 +163,26 @@ function TournamentPage() {
 
                                     {tournament.categories && (
                                         <div className="tournament-categories">
-                                            <span className="categories-label">Kategori:</span>
+                                            <span className="categories-label">Kategori & Biaya:</span>
                                             <div className="categories-list">
-                                                {tournament.categories.split(',').map((cat, idx) => (
-                                                    <span key={idx} className="category-badge">{cat.trim()}</span>
-                                                ))}
+                                                {(() => {
+                                                    try {
+                                                        const cats = JSON.parse(tournament.categories)
+                                                        if (Array.isArray(cats)) {
+                                                            return cats.map((cat, idx) => (
+                                                                <span key={idx} className="category-badge">
+                                                                    {cat.name}
+                                                                    {cat.fee && <span className="category-fee"> - Rp {parseInt(cat.fee).toLocaleString('id-ID')}</span>}
+                                                                </span>
+                                                            ))
+                                                        }
+                                                    } catch {
+                                                        // Legacy fallback
+                                                        return tournament.categories.split(',').map((cat, idx) => (
+                                                            <span key={idx} className="category-badge">{cat.trim()}</span>
+                                                        ))
+                                                    }
+                                                })()}
                                             </div>
                                         </div>
                                     )}
@@ -234,7 +271,9 @@ function TournamentPage() {
                                                 required
                                             >
                                                 {categories.map((cat, idx) => (
-                                                    <option key={idx} value={cat}>{cat}</option>
+                                                    <option key={idx} value={cat.name}>
+                                                        {cat.name} {cat.fee ? `(Rp ${parseInt(cat.fee).toLocaleString('id-ID')})` : ''}
+                                                    </option>
                                                 ))}
                                             </select>
                                         </div>

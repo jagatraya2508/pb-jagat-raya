@@ -149,6 +149,16 @@
     padding: var(--spacing-xs) var(--spacing-sm);
     border-radius: var(--radius-full);
     font-size: var(--font-size-xs);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    /* Optional spacing */
+}
+
+.category-fee {
+    font-weight: 600;
+    color: var(--accent-yellow);
+    /* Make the fee pop out a bit */
 }
 
 .register-btn {

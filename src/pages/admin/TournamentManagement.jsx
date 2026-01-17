@@ -26,7 +26,7 @@ function TournamentManagement() {
         start_date: '',
         end_date: '',
         registration_deadline: '',
-        categories: 'Tunggal Putra, Tunggal Putri, Ganda Putra, Ganda Putri, Ganda Campuran',
+        categories: '',
         max_participants: 100,
         status: 'open'
     })
@@ -127,7 +127,7 @@ function TournamentManagement() {
             start_date: '',
             end_date: '',
             registration_deadline: '',
-            categories: 'Tunggal Putra, Tunggal Putri, Ganda Putra, Ganda Putri, Ganda Campuran',
+            categories: '',
             max_participants: 100,
             status: 'open'
         })
@@ -389,47 +389,99 @@ function TournamentManagement() {
                                     <label className="form-label">Kategori Pertandingan</label>
                                     <div className="category-selection-container" style={{
                                         display: 'grid',
-                                        gridTemplateColumns: 'repeat(2, 1fr)',
-                                        gap: '0.5rem',
-                                        maxHeight: '200px',
+                                        gridTemplateColumns: '1fr',
+                                        gap: '0.75rem',
+                                        maxHeight: '300px',
                                         overflowY: 'auto',
-                                        padding: '0.5rem',
+                                        padding: '0.75rem',
                                         border: '1px solid var(--text-muted)',
                                         borderRadius: 'var(--radius-md)'
                                     }}>
-                                        {availableCategories.map((cat) => (
-                                            <label key={cat.id} className="category-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    value={cat.name}
-                                                    checked={formData.categories.includes(cat.name)}
-                                                    onChange={(e) => {
-                                                        const isChecked = e.target.checked
-                                                        const currentCategories = formData.categories
-                                                            ? formData.categories.split(', ').filter(Boolean)
-                                                            : []
+                                        {availableCategories.map((cat) => {
+                                            let currentCategories = []
+                                            try {
+                                                // Try to parse as JSON
+                                                currentCategories = JSON.parse(formData.categories)
+                                            } catch (e) {
+                                                // Fallback to legacy comma-separated string
+                                                currentCategories = formData.categories
+                                                    ? formData.categories.split(',').map(c => ({ name: c.trim(), fee: '' }))
+                                                    : []
+                                            }
 
-                                                        let newCategories
-                                                        if (isChecked) {
-                                                            newCategories = [...currentCategories, cat.name]
-                                                        } else {
-                                                            newCategories = currentCategories.filter(c => c !== cat.name)
-                                                        }
+                                            // Ensure currentCategories is an array of objects
+                                            if (!Array.isArray(currentCategories)) currentCategories = []
 
-                                                        setFormData({
-                                                            ...formData,
-                                                            categories: newCategories.join(', ')
-                                                        })
-                                                    }}
-                                                />
-                                                <span style={{ fontSize: '0.875rem' }}>
-                                                    {cat.name} {cat.description && <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>- {cat.description}</span>}
-                                                </span>
-                                            </label>
-                                        ))}
+                                            // Find if this category is selected
+                                            const selectedCat = currentCategories.find(c => c.name === cat.name)
+                                            const isChecked = !!selectedCat
+
+                                            return (
+                                                <div key={cat.id} className="category-item" style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '1rem',
+                                                    padding: '0.5rem',
+                                                    backgroundColor: isChecked ? 'var(--bg-secondary)' : 'transparent',
+                                                    borderRadius: 'var(--radius-sm)'
+                                                }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', flex: 1 }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isChecked}
+                                                            onChange={(e) => {
+                                                                const checked = e.target.checked
+                                                                let newCategories = [...currentCategories]
+
+                                                                if (checked) {
+                                                                    newCategories.push({ name: cat.name, fee: '' })
+                                                                } else {
+                                                                    newCategories = newCategories.filter(c => c.name !== cat.name)
+                                                                }
+
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    categories: JSON.stringify(newCategories)
+                                                                })
+                                                            }}
+                                                        />
+                                                        <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{cat.name}</span>
+                                                    </label>
+
+                                                    {isChecked && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Rp</span>
+                                                            <input
+                                                                type="number"
+                                                                placeholder="Biaya Pendaftaran"
+                                                                value={selectedCat.fee}
+                                                                onChange={(e) => {
+                                                                    const newFee = e.target.value
+                                                                    const newCategories = currentCategories.map(c =>
+                                                                        c.name === cat.name ? { ...c, fee: newFee } : c
+                                                                    )
+                                                                    setFormData({
+                                                                        ...formData,
+                                                                        categories: JSON.stringify(newCategories)
+                                                                    })
+                                                                }}
+                                                                style={{
+                                                                    padding: '0.25rem 0.5rem',
+                                                                    borderRadius: 'var(--radius-sm)',
+                                                                    border: '1px solid var(--border-color)',
+                                                                    width: '120px',
+                                                                    fontSize: '0.875rem'
+                                                                }}
+                                                                required
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                     <p className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                                        Pilih kategori yang tersedia untuk kejuaraan ini.
+                                        Pilih kategori dan masukkan biaya pendaftaran untuk setiap kategori.
                                     </p>
                                 </div>
 
