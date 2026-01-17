@@ -7,6 +7,7 @@ import TournamentPage from './pages/TournamentPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import MemberManagement from './pages/admin/MemberManagement'
 import TournamentManagement from './pages/admin/TournamentManagement'
+import CategoryManagement from './pages/admin/CategoryManagement'
 import './index.css'
 
 function App() {
@@ -41,6 +42,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TournamentManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              <ProtectedRoute>
+                <CategoryManagement />
               </ProtectedRoute>
             }
           />

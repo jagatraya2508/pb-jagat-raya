@@ -50,6 +50,7 @@ const initDb = async () => {
                 partner_name TEXT,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
+
         `);
         console.log('Database tables verified/created.');
     } catch (err) {
@@ -58,6 +59,58 @@ const initDb = async () => {
 };
 
 initDb();
+
+// --- API Routes ---
+
+// 4. Categories
+app.get('/api/categories', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT * FROM categories ORDER BY name ASC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/categories', async (req, res) => {
+    try {
+        const { name, description, match_type } = req.body;
+        const { rows } = await pool.query(
+            'INSERT INTO categories (name, description, match_type) VALUES ($1, $2, $3) RETURNING *',
+            [name, description, match_type]
+        );
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/categories/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, description, match_type } = req.body;
+        const { rows } = await pool.query(
+            'UPDATE categories SET name = $1, description = $2, match_type = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+            [name, description, match_type, id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Category not found' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/categories/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM categories WHERE id = $1', [id]);
+        res.json({ message: 'Category deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // --- API Routes ---
 
@@ -132,9 +185,13 @@ app.get('/api/tournaments', async (req, res) => {
 app.post('/api/tournaments', async (req, res) => {
     try {
         const { name, description, location, start_date, end_date, registration_deadline, categories, max_participants, status } = req.body;
+
+        // Helper to convert empty string to null for dates
+        const toDate = (val) => val === '' ? null : val;
+
         const { rows } = await pool.query(
             'INSERT INTO tournaments (name, description, location, start_date, end_date, registration_deadline, categories, max_participants, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [name, description, location, start_date, end_date, registration_deadline, categories, max_participants, status]
+            [name, description, location, toDate(start_date), toDate(end_date), toDate(registration_deadline), categories, max_participants, status]
         );
         res.json(rows);
     } catch (err) {
@@ -146,9 +203,13 @@ app.put('/api/tournaments/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { name, description, location, start_date, end_date, registration_deadline, categories, max_participants, status } = req.body;
+
+        // Helper to convert empty string to null for dates
+        const toDate = (val) => val === '' ? null : val;
+
         const { rows } = await pool.query(
             'UPDATE tournaments SET name = $1, description = $2, location = $3, start_date = $4, end_date = $5, registration_deadline = $6, categories = $7, max_participants = $8, status = $9, updated_at = NOW() WHERE id = $10 RETURNING *',
-            [name, description, location, start_date, end_date, registration_deadline, categories, max_participants, status, id]
+            [name, description, location, toDate(start_date), toDate(end_date), toDate(registration_deadline), categories, max_participants, status, id]
         );
         res.json(rows);
     } catch (err) {

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import {
     Users, Trophy, LogOut, Home, Settings,
-    UserPlus, Calendar, BarChart3
+    UserPlus, Calendar, BarChart3, Tag
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import './AdminDashboard.css'
@@ -37,6 +37,13 @@ function AdminDashboard() {
             link: '/admin/tournaments',
             color: 'yellow'
         },
+        {
+            title: 'Kelola Kategori',
+            description: 'Atur master data kategori pertandingan',
+            icon: Tag,
+            link: '/admin/categories',
+            color: 'purple'
+        },
     ]
 
     return (
@@ -61,6 +68,10 @@ function AdminDashboard() {
                         <Users size={20} />
                         Anggota
                     </Link>
+                    <Link to="/admin/categories" className="sidebar-link">
+                        <Tag size={20} />
+                        Kategori
+                    </Link>
                     <Link to="/admin/tournaments" className="sidebar-link">
                         <Trophy size={20} />
                         Kejuaraan
@@ -68,10 +79,7 @@ function AdminDashboard() {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <Link to="/" className="sidebar-link">
-                        <Home size={20} />
-                        Ke Website
-                    </Link>
+
                     <button onClick={handleLogout} className="sidebar-link sidebar-logout">
                         <LogOut size={20} />
                         Logout
@@ -87,6 +95,10 @@ function AdminDashboard() {
                             <p>Selamat datang kembali, Admin!</p>
                         </div>
                         <div className="admin-user">
+                            <Link to="/" className="btn btn-ghost btn-sm" style={{ marginRight: '1rem' }}>
+                                <Home size={18} style={{ marginRight: '0.5rem' }} />
+                                Ke Website
+                            </Link>
                             <div className="admin-user-avatar">
                                 <Settings size={20} />
                             </div>

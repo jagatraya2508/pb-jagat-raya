@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
     ArrowLeft, Plus, Search, Edit, Trash2, X, Eye,
-    Users, Trophy, Home, LogOut, BarChart3, Save, Calendar
+    Users, Trophy, Home, LogOut, BarChart3, Save, Calendar, Tag
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
@@ -18,6 +18,7 @@ function TournamentManagement() {
     const [showRegistrationsModal, setShowRegistrationsModal] = useState(false)
     const [selectedTournament, setSelectedTournament] = useState(null)
     const [editingTournament, setEditingTournament] = useState(null)
+    const [availableCategories, setAvailableCategories] = useState([])
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -32,7 +33,17 @@ function TournamentManagement() {
 
     useEffect(() => {
         fetchTournaments()
+        fetchCategories()
     }, [])
+
+    const fetchCategories = async () => {
+        try {
+            const data = await api.categories.list()
+            setAvailableCategories(data || [])
+        } catch (error) {
+            console.error('Error fetching categories:', error)
+        }
+    }
 
     const fetchTournaments = async () => {
         try {
@@ -82,15 +93,24 @@ function TournamentManagement() {
         }
     }
 
+    const filteredTournaments = tournaments.filter(t =>
+        t.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+
+    const formatForInput = (dateString) => {
+        if (!dateString) return ''
+        return new Date(dateString).toISOString().split('T')[0]
+    }
+
     const openEditModal = (tournament) => {
         setEditingTournament(tournament)
         setFormData({
             name: tournament.name,
             description: tournament.description || '',
             location: tournament.location || '',
-            start_date: tournament.start_date || '',
-            end_date: tournament.end_date || '',
-            registration_deadline: tournament.registration_deadline || '',
+            start_date: formatForInput(tournament.start_date),
+            end_date: formatForInput(tournament.end_date),
+            registration_deadline: formatForInput(tournament.registration_deadline),
             categories: tournament.categories || '',
             max_participants: tournament.max_participants || 100,
             status: tournament.status
@@ -125,10 +145,6 @@ function TournamentManagement() {
         setEditingTournament(null)
     }
 
-    const filteredTournaments = tournaments.filter(t =>
-        t.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-
     const formatDate = (dateString) => {
         if (!dateString) return '-'
         return new Date(dateString).toLocaleDateString('id-ID', {
@@ -159,6 +175,10 @@ function TournamentManagement() {
                     <Link to="/admin/members" className="sidebar-link">
                         <Users size={20} />
                         Anggota
+                    </Link>
+                    <Link to="/admin/categories" className="sidebar-link">
+                        <Tag size={20} />
+                        Kategori
                     </Link>
                     <Link to="/admin/tournaments" className="sidebar-link active">
                         <Trophy size={20} />
@@ -366,13 +386,51 @@ function TournamentManagement() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label className="form-label">Kategori (pisahkan dengan koma)</label>
-                                    <input
-                                        type="text"
-                                        className="form-input"
-                                        value={formData.categories}
-                                        onChange={(e) => setFormData({ ...formData, categories: e.target.value })}
-                                    />
+                                    <label className="form-label">Kategori Pertandingan</label>
+                                    <div className="category-selection-container" style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(2, 1fr)',
+                                        gap: '0.5rem',
+                                        maxHeight: '200px',
+                                        overflowY: 'auto',
+                                        padding: '0.5rem',
+                                        border: '1px solid var(--text-muted)',
+                                        borderRadius: 'var(--radius-md)'
+                                    }}>
+                                        {availableCategories.map((cat) => (
+                                            <label key={cat.id} className="category-checkbox" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    value={cat.name}
+                                                    checked={formData.categories.includes(cat.name)}
+                                                    onChange={(e) => {
+                                                        const isChecked = e.target.checked
+                                                        const currentCategories = formData.categories
+                                                            ? formData.categories.split(', ').filter(Boolean)
+                                                            : []
+
+                                                        let newCategories
+                                                        if (isChecked) {
+                                                            newCategories = [...currentCategories, cat.name]
+                                                        } else {
+                                                            newCategories = currentCategories.filter(c => c !== cat.name)
+                                                        }
+
+                                                        setFormData({
+                                                            ...formData,
+                                                            categories: newCategories.join(', ')
+                                                        })
+                                                    }}
+                                                />
+                                                <span style={{ fontSize: '0.875rem' }}>
+                                                    {cat.name} {cat.description && <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>- {cat.description}</span>}
+                                                </span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                                        Pilih kategori yang tersedia untuk kejuaraan ini.
+                                    </p>
                                 </div>
 
                                 <div className="form-group">

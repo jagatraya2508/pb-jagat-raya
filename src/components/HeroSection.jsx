@@ -1,8 +1,24 @@
+import { useState, useEffect } from 'react'
 import { ArrowRight, Trophy, Users, Calendar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './HeroSection.css'
 
 function HeroSection() {
+    const [currentSlide, setCurrentSlide] = useState(0)
+
+    const slides = [
+        "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000&auto=format&fit=crop", // Badminton Player Portrait
+        "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=1000&auto=format&fit=crop", // Action Shot
+        "https://images.unsplash.com/photo-1622394749320-7216a6902264?q=80&w=1000&auto=format&fit=crop"  // Racket Close up
+    ]
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % slides.length)
+        }, 3000)
+        return () => clearInterval(interval)
+    }, [])
+
     return (
         <section id="beranda" className="hero">
             <div className="hero-bg">
@@ -38,43 +54,19 @@ function HeroSection() {
                         </a>
                     </div>
 
-                    <div className="hero-stats">
-                        <div className="hero-stat">
-                            <div className="hero-stat-icon">
-                                <Users size={24} />
-                            </div>
-                            <div className="hero-stat-info">
-                                <span className="hero-stat-number">100+</span>
-                                <span className="hero-stat-label">Anggota Aktif</span>
-                            </div>
-                        </div>
-                        <div className="hero-stat">
-                            <div className="hero-stat-icon">
-                                <Trophy size={24} />
-                            </div>
-                            <div className="hero-stat-info">
-                                <span className="hero-stat-number">50+</span>
-                                <span className="hero-stat-label">Prestasi</span>
-                            </div>
-                        </div>
-                        <div className="hero-stat">
-                            <div className="hero-stat-icon">
-                                <Calendar size={24} />
-                            </div>
-                            <div className="hero-stat-info">
-                                <span className="hero-stat-number">10+</span>
-                                <span className="hero-stat-label">Tahun Berdiri</span>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
 
                 <div className="hero-visual">
-                    <div className="hero-image-container">
-                        <div className="hero-shuttlecock">🏸</div>
-                        <div className="hero-circle hero-circle-1"></div>
-                        <div className="hero-circle hero-circle-2"></div>
-                        <div className="hero-circle hero-circle-3"></div>
+                    <div className="hero-slider-container">
+                        {slides.map((slide, index) => (
+                            <div
+                                key={index}
+                                className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
+                                style={{ backgroundImage: `url(${slide})` }}
+                            ></div>
+                        ))}
+                        <div className="hero-slider-overlay"></div>
                     </div>
                 </div>
             </div>

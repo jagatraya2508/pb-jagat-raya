@@ -6,35 +6,31 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
-import './MemberManagement.css'
+import './MemberManagement.css' // Reuse similar styles
 
-function MemberManagement() {
+function CategoryManagement() {
     const { signOut } = useAuth()
-    const [members, setMembers] = useState([])
+    const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [showModal, setShowModal] = useState(false)
-    const [editingMember, setEditingMember] = useState(null)
+    const [editingCategory, setEditingCategory] = useState(null)
     const [formData, setFormData] = useState({
         name: '',
-        email: '',
-        phone: '',
-        address: '',
-        birthdate: '',
-        category: 'dewasa',
-        status: 'aktif'
+        description: '',
+        match_type: 'single'
     })
 
     useEffect(() => {
-        fetchMembers()
+        fetchCategories()
     }, [])
 
-    const fetchMembers = async () => {
+    const fetchCategories = async () => {
         try {
-            const data = await api.members.list()
-            setMembers(data || [])
+            const data = await api.categories.list()
+            setCategories(data || [])
         } catch (error) {
-            console.error('Error fetching members:', error)
+            console.error('Error fetching categories:', error)
         } finally {
             setLoading(false)
         }
@@ -43,66 +39,58 @@ function MemberManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            if (editingMember) {
-                await api.members.update(editingMember.id, formData)
+            if (editingCategory) {
+                await api.categories.update(editingCategory.id, formData)
             } else {
-                await api.members.create(formData)
+                await api.categories.create(formData)
             }
 
-            fetchMembers()
+            fetchCategories()
             closeModal()
         } catch (error) {
-            console.error('Error saving member:', error)
+            console.error('Error saving category:', error)
             alert('Gagal menyimpan data.')
         }
     }
 
     const handleDelete = async (id) => {
-        if (!confirm('Yakin ingin menghapus anggota ini?')) return
+        if (!confirm('Yakin ingin menghapus kategori ini?')) return
 
         try {
-            await api.members.delete(id)
-            fetchMembers()
+            await api.categories.delete(id)
+            fetchCategories()
         } catch (error) {
-            console.error('Error deleting member:', error)
+            console.error('Error deleting category:', error)
         }
     }
 
-    const openEditModal = (member) => {
-        setEditingMember(member)
+    const openEditModal = (category) => {
+        setEditingCategory(category)
         setFormData({
-            name: member.name,
-            email: member.email || '',
-            phone: member.phone || '',
-            address: member.address || '',
-            birthdate: member.birthdate || '',
-            category: member.category,
-            status: member.status
+            name: category.name,
+            description: category.description || '',
+            match_type: category.match_type || 'single'
         })
         setShowModal(true)
     }
 
     const openAddModal = () => {
-        setEditingMember(null)
+        setEditingCategory(null)
         setFormData({
             name: '',
-            email: '',
-            phone: '',
-            address: '',
-            birthdate: '',
-            category: 'dewasa',
-            status: 'aktif'
+            description: '',
+            match_type: 'single'
         })
         setShowModal(true)
     }
 
     const closeModal = () => {
         setShowModal(false)
-        setEditingMember(null)
+        setEditingCategory(null)
     }
 
-    const filteredMembers = members.filter(member =>
-        member.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredCategories = categories.filter(c =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     return (
@@ -110,7 +98,7 @@ function MemberManagement() {
             <aside className="admin-sidebar">
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
-                        <Trophy size={24} />
+                        <Tag size={24} />
                     </div>
                     <div className="sidebar-brand">
                         <span className="sidebar-brand-name">PB. JAGAT RAYA</span>
@@ -123,11 +111,11 @@ function MemberManagement() {
                         <BarChart3 size={20} />
                         Dashboard
                     </Link>
-                    <Link to="/admin/members" className="sidebar-link active">
+                    <Link to="/admin/members" className="sidebar-link">
                         <Users size={20} />
                         Anggota
                     </Link>
-                    <Link to="/admin/categories" className="sidebar-link">
+                    <Link to="/admin/categories" className="sidebar-link active">
                         <Tag size={20} />
                         Kategori
                     </Link>
@@ -157,13 +145,13 @@ function MemberManagement() {
                                 <ArrowLeft size={20} />
                             </Link>
                             <div>
-                                <h1>Kelola Anggota</h1>
-                                <p>Tambah, edit, dan hapus data anggota</p>
+                                <h1>Kelola Kategori</h1>
+                                <p>Atur master data kategori pertandingan</p>
                             </div>
                         </div>
                         <button className="btn btn-accent" onClick={openAddModal}>
                             <Plus size={20} />
-                            Tambah Anggota
+                            Tambah Kategori
                         </button>
                     </div>
                 </header>
@@ -174,65 +162,57 @@ function MemberManagement() {
                         <Search size={20} />
                         <input
                             type="text"
-                            placeholder="Cari anggota..."
+                            placeholder="Cari kategori..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
 
-                    {/* Members Table */}
+                    {/* Categories Table */}
                     <div className="table-container">
                         <table className="table">
                             <thead>
                                 <tr>
-                                    <th>Nama</th>
-                                    <th>Email</th>
-                                    <th>Telepon</th>
-                                    <th>Kategori</th>
-                                    <th>Status</th>
+                                    <th>Kode/Nama</th>
+                                    <th>Deskripsi</th>
+                                    <th>Tipe</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="6" className="table-empty">
+                                        <td colSpan="4" className="table-empty">
                                             <div className="spinner"></div>
                                         </td>
                                     </tr>
-                                ) : filteredMembers.length === 0 ? (
+                                ) : filteredCategories.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" className="table-empty">
-                                            {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada anggota'}
+                                        <td colSpan="4" className="table-empty">
+                                            {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada kategori'}
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredMembers.map((member) => (
-                                        <tr key={member.id}>
-                                            <td className="member-name">{member.name}</td>
-                                            <td>{member.email || '-'}</td>
-                                            <td>{member.phone || '-'}</td>
+                                    filteredCategories.map((cat) => (
+                                        <tr key={cat.id}>
+                                            <td className="member-name">{cat.name}</td>
+                                            <td>{cat.description || '-'}</td>
                                             <td>
-                                                <span className={`badge badge-${member.category === 'anak' ? 'info' : 'warning'}`}>
-                                                    {member.category}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span className={`badge badge-${member.status === 'aktif' ? 'success' : 'danger'}`}>
-                                                    {member.status}
+                                                <span className="badge badge-info">
+                                                    {cat.match_type === 'single' ? 'Tunggal' : 'Ganda'}
                                                 </span>
                                             </td>
                                             <td>
                                                 <div className="table-actions">
                                                     <button
                                                         className="action-btn edit"
-                                                        onClick={() => openEditModal(member)}
+                                                        onClick={() => openEditModal(cat)}
                                                     >
                                                         <Edit size={16} />
                                                     </button>
                                                     <button
                                                         className="action-btn delete"
-                                                        onClick={() => handleDelete(member.id)}
+                                                        onClick={() => handleDelete(cat.id)}
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
@@ -252,7 +232,7 @@ function MemberManagement() {
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2>{editingMember ? 'Edit Anggota' : 'Tambah Anggota'}</h2>
+                            <h2>{editingCategory ? 'Edit Kategori' : 'Tambah Kategori'}</h2>
                             <button className="modal-close" onClick={closeModal}>
                                 <X size={20} />
                             </button>
@@ -261,79 +241,37 @@ function MemberManagement() {
                         <form onSubmit={handleSubmit}>
                             <div className="modal-body">
                                 <div className="form-group">
-                                    <label className="form-label">Nama Lengkap *</label>
+                                    <label className="form-label">Kode/Nama Kategori *</label>
                                     <input
                                         type="text"
                                         className="form-input"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="Contoh: Tunggal Putra"
                                         required
                                     />
                                 </div>
 
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label className="form-label">Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-input"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Telepon</label>
-                                        <input
-                                            type="tel"
-                                            className="form-input"
-                                            value={formData.phone}
-                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
                                 <div className="form-group">
-                                    <label className="form-label">Alamat</label>
+                                    <label className="form-label">Deskripsi</label>
                                     <textarea
                                         className="form-input"
-                                        rows="2"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        rows="3"
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        placeholder="Keterangan kategori..."
                                     />
                                 </div>
 
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label className="form-label">Tanggal Lahir</label>
-                                        <input
-                                            type="date"
-                                            className="form-input"
-                                            value={formData.birthdate}
-                                            onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Kategori</label>
-                                        <select
-                                            className="form-input"
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                        >
-                                            <option value="anak">Anak-anak</option>
-                                            <option value="dewasa">Dewasa</option>
-                                        </select>
-                                    </div>
-                                </div>
-
                                 <div className="form-group">
-                                    <label className="form-label">Status</label>
+                                    <label className="form-label">Tipe Pertandingan</label>
                                     <select
                                         className="form-input"
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        value={formData.match_type}
+                                        onChange={(e) => setFormData({ ...formData, match_type: e.target.value })}
                                     >
-                                        <option value="aktif">Aktif</option>
-                                        <option value="nonaktif">Non-Aktif</option>
+                                        <option value="single">Tunggal (Single)</option>
+                                        <option value="double">Ganda (Double)</option>
                                     </select>
                                 </div>
                             </div>
@@ -355,4 +293,4 @@ function MemberManagement() {
     )
 }
 
-export default MemberManagement
+export default CategoryManagement

@@ -81,5 +81,37 @@ export const api = {
             if (!res.ok) throw new Error('Failed to register');
             return await res.json();
         }
+    },
+    categories: {
+        list: async () => {
+            const res = await fetch(`${API_URL}/categories`);
+            if (!res.ok) throw new Error('Failed to fetch categories');
+            return await res.json();
+        },
+        create: async (data) => {
+            const res = await fetch(`${API_URL}/categories`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to create category');
+            return await res.json();
+        },
+        update: async (id, data) => {
+            const res = await fetch(`${API_URL}/categories/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to update category');
+            return await res.json();
+        },
+        delete: async (id) => {
+            const res = await fetch(`${API_URL}/categories/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Failed to delete category');
+            return await res.json();
+        }
     }
 };

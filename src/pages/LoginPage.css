@@ -16,7 +16,7 @@
 .login-bg-gradient {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, var(--bg-darker) 0%, var(--primary-blue-dark) 50%, var(--bg-darker) 100%);
+    background: var(--gradient-hero);
 }
 
 .login-container {
@@ -35,11 +35,13 @@
 }
 
 .login-back:hover {
-    color: var(--text-primary);
+    color: var(--primary-blue);
 }
 
 .login-card {
     padding: var(--spacing-2xl);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-xl);
 }
 
 .login-header {
@@ -55,7 +57,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--bg-dark);
+    color: white;
     margin: 0 auto var(--spacing-lg);
     box-shadow: var(--shadow-glow-yellow);
 }
@@ -97,7 +99,7 @@
 .login-help {
     text-align: center;
     padding-top: var(--spacing-lg);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .login-help p {

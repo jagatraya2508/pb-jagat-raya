@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, LogIn, Home, Users, Trophy, Calendar, Image, Phone } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Menu, X, LogIn, Home, Users, Trophy, Calendar, Image, Phone, LogOut, LayoutDashboard } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 import './Navbar.css'
 
 function Navbar() {
+    const { user, signOut } = useAuth()
+    const navigate = useNavigate()
     const [isOpen, setIsOpen] = useState(false)
     const [isScrolled, setIsScrolled] = useState(false)
     const location = useLocation()
@@ -65,14 +68,24 @@ function Navbar() {
                     </ul>
 
                     <div className="navbar-actions">
-                        <Link to="/kejuaraan" className="btn btn-outline btn-sm">
-                            <Trophy size={18} />
-                            Daftar Kejuaraan
-                        </Link>
-                        <Link to="/login" className="btn btn-accent btn-sm">
-                            <LogIn size={18} />
-                            Login Admin
-                        </Link>
+
+                        {user ? (
+                            <>
+                                <Link to="/admin" className="btn btn-ghost btn-sm">
+                                    <LayoutDashboard size={18} />
+                                    Panel
+                                </Link>
+                                <button onClick={() => { signOut(); navigate('/'); }} className="btn btn-accent btn-sm">
+                                    <LogOut size={18} />
+                                    Logout
+                                </button>
+                            </>
+                        ) : (
+                            <Link to="/login" className="btn btn-accent btn-sm">
+                                <LogIn size={18} />
+                                Login Admin
+                            </Link>
+                        )}
                     </div>
                 </div>
 
