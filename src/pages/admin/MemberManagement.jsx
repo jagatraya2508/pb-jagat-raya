@@ -5,7 +5,7 @@ import {
     Users, Trophy, Home, LogOut, BarChart3, Save
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { supabase } from '../../lib/supabase'
+import { api } from '../../lib/api'
 import './MemberManagement.css'
 
 function MemberManagement() {
@@ -31,12 +31,7 @@ function MemberManagement() {
 
     const fetchMembers = async () => {
         try {
-            const { data, error } = await supabase
-                .from('members')
-                .select('*')
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
+            const data = await api.members.list()
             setMembers(data || [])
         } catch (error) {
             console.error('Error fetching members:', error)
@@ -49,23 +44,16 @@ function MemberManagement() {
         e.preventDefault()
         try {
             if (editingMember) {
-                const { error } = await supabase
-                    .from('members')
-                    .update(formData)
-                    .eq('id', editingMember.id)
-                if (error) throw error
+                await api.members.update(editingMember.id, formData)
             } else {
-                const { error } = await supabase
-                    .from('members')
-                    .insert([formData])
-                if (error) throw error
+                await api.members.create(formData)
             }
 
             fetchMembers()
             closeModal()
         } catch (error) {
             console.error('Error saving member:', error)
-            alert('Gagal menyimpan data. Pastikan Supabase sudah dikonfigurasi.')
+            alert('Gagal menyimpan data.')
         }
     }
 
@@ -73,11 +61,7 @@ function MemberManagement() {
         if (!confirm('Yakin ingin menghapus anggota ini?')) return
 
         try {
-            const { error } = await supabase
-                .from('members')
-                .delete()
-                .eq('id', id)
-            if (error) throw error
+            await api.members.delete(id)
             fetchMembers()
         } catch (error) {
             console.error('Error deleting member:', error)

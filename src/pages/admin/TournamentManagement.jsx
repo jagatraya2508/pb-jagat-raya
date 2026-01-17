@@ -5,7 +5,7 @@ import {
     Users, Trophy, Home, LogOut, BarChart3, Save, Calendar
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { supabase } from '../../lib/supabase'
+import { api } from '../../lib/api'
 import './MemberManagement.css'
 
 function TournamentManagement() {
@@ -36,12 +36,7 @@ function TournamentManagement() {
 
     const fetchTournaments = async () => {
         try {
-            const { data, error } = await supabase
-                .from('tournaments')
-                .select('*')
-                .order('start_date', { ascending: false })
-
-            if (error) throw error
+            const data = await api.tournaments.list()
             setTournaments(data || [])
         } catch (error) {
             console.error('Error fetching tournaments:', error)
@@ -52,13 +47,7 @@ function TournamentManagement() {
 
     const fetchRegistrations = async (tournamentId) => {
         try {
-            const { data, error } = await supabase
-                .from('tournament_registrations')
-                .select('*')
-                .eq('tournament_id', tournamentId)
-                .order('created_at', { ascending: false })
-
-            if (error) throw error
+            const data = await api.registrations.listByTournament(tournamentId)
             setRegistrations(data || [])
         } catch (error) {
             console.error('Error fetching registrations:', error)
@@ -69,23 +58,16 @@ function TournamentManagement() {
         e.preventDefault()
         try {
             if (editingTournament) {
-                const { error } = await supabase
-                    .from('tournaments')
-                    .update(formData)
-                    .eq('id', editingTournament.id)
-                if (error) throw error
+                await api.tournaments.update(editingTournament.id, formData)
             } else {
-                const { error } = await supabase
-                    .from('tournaments')
-                    .insert([formData])
-                if (error) throw error
+                await api.tournaments.create(formData)
             }
 
             fetchTournaments()
             closeModal()
         } catch (error) {
             console.error('Error saving tournament:', error)
-            alert('Gagal menyimpan data. Pastikan Supabase sudah dikonfigurasi.')
+            alert('Gagal menyimpan data.')
         }
     }
 
@@ -93,11 +75,7 @@ function TournamentManagement() {
         if (!confirm('Yakin ingin menghapus kejuaraan ini?')) return
 
         try {
-            const { error } = await supabase
-                .from('tournaments')
-                .delete()
-                .eq('id', id)
-            if (error) throw error
+            await api.tournaments.delete(id)
             fetchTournaments()
         } catch (error) {
             console.error('Error deleting tournament:', error)

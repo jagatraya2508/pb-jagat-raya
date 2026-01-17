@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Trophy, Calendar, MapPin, Users, Clock, Send, CheckCircle } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { api } from '../lib/api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import './TournamentPage.css'
@@ -26,13 +26,7 @@ function TournamentPage() {
 
     const fetchTournaments = async () => {
         try {
-            const { data, error } = await supabase
-                .from('tournaments')
-                .select('*')
-                .eq('status', 'open')
-                .order('start_date', { ascending: true })
-
-            if (error) throw error
+            const data = await api.tournaments.list('open')
             setTournaments(data || [])
         } catch (error) {
             console.error('Error fetching tournaments:', error)
@@ -57,14 +51,10 @@ function TournamentPage() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            const { error } = await supabase
-                .from('tournament_registrations')
-                .insert([{
-                    tournament_id: selectedTournament.id,
-                    ...formData
-                }])
-
-            if (error) throw error
+            await api.registrations.create({
+                tournament_id: selectedTournament.id,
+                ...formData
+            })
             setSubmitted(true)
         } catch (error) {
             console.error('Error registering:', error)
