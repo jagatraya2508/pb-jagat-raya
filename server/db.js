@@ -10,7 +10,7 @@ const pool = new Pool({
     password: 'sa',
     host: 'localhost',
     port: 5432,
-    database: 'tournamen_db',
+    database: 'tournament_db',
 });
 
 // Test connection

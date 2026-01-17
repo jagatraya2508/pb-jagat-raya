@@ -17,12 +17,12 @@ async function createDatabase() {
     try {
         await client.connect();
         // Check if database exists
-        const res = await client.query("SELECT 1 FROM pg_database WHERE datname = 'tournamen_db'");
+        const res = await client.query("SELECT 1 FROM pg_database WHERE datname = 'tournament_db'");
         if (res.rowCount === 0) {
-            await client.query('CREATE DATABASE tournamen_db');
-            console.log('Database tournamen_db created successfully.');
+            await client.query('CREATE DATABASE tournament_db');
+            console.log('Database tournament_db created successfully.');
         } else {
-            console.log('Database tournamen_db already exists.');
+            console.log('Database tournament_db already exists.');
         }
     } catch (err) {
         console.error('Error creating database:', err);
