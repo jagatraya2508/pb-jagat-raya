@@ -43,7 +43,7 @@ function Navbar() {
             <div className="navbar-container">
                 <Link to="/" className="navbar-brand">
                     <div className="navbar-logo">
-                        <Trophy size={32} />
+                        <img src="/logo.png" alt="Jagat Raya Logo" style={{ height: '40px', width: 'auto' }} />
                     </div>
                     <div className="navbar-brand-text">
                         <span className="navbar-brand-name">PB. JAGAT RAYA</span>

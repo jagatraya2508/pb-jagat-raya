@@ -19,6 +19,19 @@ function TournamentManagement() {
     const [selectedTournament, setSelectedTournament] = useState(null)
     const [editingTournament, setEditingTournament] = useState(null)
     const [availableCategories, setAvailableCategories] = useState([])
+
+    // Format number to currency with thousand separators
+    const formatCurrency = (value) => {
+        if (!value && value !== 0) return ''
+        return Number(value).toLocaleString('id-ID')
+    }
+
+    // Parse currency string back to number
+    const parseCurrency = (value) => {
+        if (!value) return ''
+        return value.replace(/\./g, '').replace(/,/g, '')
+    }
+
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -452,13 +465,15 @@ function TournamentManagement() {
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                             <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Rp</span>
                                                             <input
-                                                                type="number"
+                                                                type="text"
                                                                 placeholder="Biaya Pendaftaran"
-                                                                value={selectedCat.fee}
+                                                                value={formatCurrency(selectedCat.fee)}
                                                                 onChange={(e) => {
-                                                                    const newFee = e.target.value
+                                                                    const rawValue = parseCurrency(e.target.value)
+                                                                    // Only allow numbers
+                                                                    if (rawValue !== '' && !/^\d+$/.test(rawValue)) return
                                                                     const newCategories = currentCategories.map(c =>
-                                                                        c.name === cat.name ? { ...c, fee: newFee } : c
+                                                                        c.name === cat.name ? { ...c, fee: rawValue } : c
                                                                     )
                                                                     setFormData({
                                                                         ...formData,
@@ -470,7 +485,8 @@ function TournamentManagement() {
                                                                     borderRadius: 'var(--radius-sm)',
                                                                     border: '1px solid var(--border-color)',
                                                                     width: '120px',
-                                                                    fontSize: '0.875rem'
+                                                                    fontSize: '0.875rem',
+                                                                    textAlign: 'right'
                                                                 }}
                                                                 required
                                                             />

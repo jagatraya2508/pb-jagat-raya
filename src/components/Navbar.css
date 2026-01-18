@@ -34,15 +34,9 @@
 }
 
 .navbar-logo {
-    width: 48px;
-    height: 48px;
-    background: var(--gradient-accent);
-    border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    box-shadow: var(--shadow-glow-yellow);
 }
 
 .navbar-brand-text {
