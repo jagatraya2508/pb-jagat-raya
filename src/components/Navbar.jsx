@@ -43,7 +43,7 @@ function Navbar() {
             <div className="navbar-container">
                 <Link to="/" className="navbar-brand">
                     <div className="navbar-logo">
-                        <img src="/logo.png" alt="Jagat Raya Logo" style={{ height: '60px', width: 'auto' }} />
+                        <img src="/logo.png" alt="Jagat Raya Logo" style={{ height: '80px', width: 'auto' }} />
                     </div>
                     <div className="navbar-brand-text">
                         <span className="navbar-brand-name">PB. JAGAT RAYA</span>

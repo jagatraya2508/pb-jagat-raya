@@ -27,7 +27,7 @@
 .about-story-card h3 {
     font-size: var(--font-size-2xl);
     font-weight: 700;
-    color: var(--accent-yellow);
+    color: var(--primary-blue);
     margin-bottom: var(--spacing-lg);
 }
 

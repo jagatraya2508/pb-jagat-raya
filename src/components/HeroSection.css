@@ -65,7 +65,7 @@
 
 .hero-title-highlight {
     display: block;
-    background: linear-gradient(135deg, var(--accent-yellow-light) 0%, var(--accent-yellow) 100%);
+    background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

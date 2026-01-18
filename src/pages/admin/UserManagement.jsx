@@ -138,11 +138,7 @@ function UserManagement() {
             <aside className="admin-sidebar">
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
-                        <Trophy size={24} />
-                    </div>
-                    <div className="sidebar-brand">
-                        <span className="sidebar-brand-name">PB. JAGAT RAYA</span>
-                        <span className="sidebar-brand-label">Admin Panel</span>
+                        <img src="/logo.png" alt="Logo" style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
                     </div>
                 </div>
 
@@ -201,7 +197,7 @@ function UserManagement() {
                                 <p>Tambah, edit, dan hapus data pengguna sistem</p>
                             </div>
                         </div>
-                        <button className="btn btn-accent" onClick={openAddModal}>
+                        <button className="btn btn-primary" onClick={openAddModal}>
                             <Plus size={20} />
                             Tambah Pengguna
                         </button>
@@ -386,7 +382,7 @@ function UserManagement() {
                                 <button type="button" className="btn btn-ghost" onClick={closeModal}>
                                     Batal
                                 </button>
-                                <button type="submit" className="btn btn-accent">
+                                <button type="submit" className="btn btn-primary">
                                     <Save size={18} />
                                     Simpan
                                 </button>

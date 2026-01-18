@@ -1,12 +1,53 @@
 import express from 'express';
 import cors from 'cors';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import pool from './db.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 5001;
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+const slidesDir = path.join(uploadsDir, 'slides');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+if (!fs.existsSync(slidesDir)) fs.mkdirSync(slidesDir);
+
+// Configure multer for slide uploads
+const slideStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, slidesDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'slide-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const uploadSlide = multer({
+    storage: slideStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png|gif|webp/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            return cb(null, true);
+        }
+        cb(new Error('Only image files are allowed!'));
+    }
+});
+
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(uploadsDir));
 
 // --- Database Initialization ---
 const initDb = async () => {
@@ -100,6 +141,16 @@ const initDb = async () => {
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
 
+            CREATE TABLE IF NOT EXISTS hero_slides (
+                id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+                image_url TEXT NOT NULL,
+                title TEXT,
+                sort_order INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+
             -- Add columns if they don't exist (for existing tables)
             DO $$ 
             BEGIN 
@@ -120,6 +171,9 @@ const initDb = async () => {
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='partner_points') THEN
                     ALTER TABLE tournament_registrations ADD COLUMN partner_points INTEGER DEFAULT 0;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='si_pbsi') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN si_pbsi TEXT;
                 END IF;
             END $$;
 
@@ -410,10 +464,10 @@ app.get('/api/registrations', async (req, res) => {
 app.put('/api/registrations/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { participant_name, email, phone, category, club_name, partner_name, partner_phone, partner_ranking, partner_points, ranking, points } = req.body;
+        const { si_pbsi, participant_name, email, phone, category, club_name, partner_name, partner_phone, partner_ranking, partner_points, ranking, points } = req.body;
         const { rows } = await pool.query(
-            'UPDATE tournament_registrations SET participant_name = $1, email = $2, phone = $3, category = $4, club_name = $5, partner_name = $6, partner_phone = $7, partner_ranking = $8, partner_points = $9, ranking = $10, points = $11 WHERE id = $12 RETURNING *',
-            [participant_name, email || '', phone, category, club_name || '', partner_name || '', partner_phone || '', partner_ranking || 0, partner_points || 0, ranking || 0, points || 0, id]
+            'UPDATE tournament_registrations SET si_pbsi = $1, participant_name = $2, email = $3, phone = $4, category = $5, club_name = $6, partner_name = $7, partner_phone = $8, partner_ranking = $9, partner_points = $10, ranking = $11, points = $12 WHERE id = $13 RETURNING *',
+            [si_pbsi || '', participant_name, email || '', phone, category, club_name || '', partner_name || '', partner_phone || '', partner_ranking || 0, partner_points || 0, ranking || 0, points || 0, id]
         );
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Registration not found' });
@@ -718,6 +772,101 @@ app.delete('/api/brackets/:id', async (req, res) => {
         const { id } = req.params;
         await pool.query('DELETE FROM tournament_brackets WHERE id = $1', [id]);
         res.json({ message: 'Bracket deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Hero Slides API Routes ---
+
+// Get all hero slides
+app.get('/api/hero-slides', async (req, res) => {
+    try {
+        const { active_only } = req.query;
+        let query = 'SELECT * FROM hero_slides';
+        if (active_only === 'true') {
+            query += ' WHERE is_active = true';
+        }
+        query += ' ORDER BY sort_order ASC, created_at ASC';
+        const { rows } = await pool.query(query);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create hero slide
+app.post('/api/hero-slides', async (req, res) => {
+    try {
+        const { image_url, title, is_active } = req.body;
+        // Get max sort_order
+        const maxOrderResult = await pool.query('SELECT COALESCE(MAX(sort_order), 0) as max_order FROM hero_slides');
+        const newOrder = maxOrderResult.rows[0].max_order + 1;
+
+        const { rows } = await pool.query(
+            'INSERT INTO hero_slides (image_url, title, sort_order, is_active) VALUES ($1, $2, $3, $4) RETURNING *',
+            [image_url, title || '', newOrder, is_active !== false]
+        );
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update hero slide
+app.put('/api/hero-slides/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { image_url, title, is_active } = req.body;
+        const { rows } = await pool.query(
+            'UPDATE hero_slides SET image_url = $1, title = $2, is_active = $3, updated_at = NOW() WHERE id = $4 RETURNING *',
+            [image_url, title || '', is_active, id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Slide not found' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Reorder hero slides
+app.put('/api/hero-slides/reorder', async (req, res) => {
+    try {
+        const { slides } = req.body; // Array of { id, sort_order }
+        for (const slide of slides) {
+            await pool.query(
+                'UPDATE hero_slides SET sort_order = $1, updated_at = NOW() WHERE id = $2',
+                [slide.sort_order, slide.id]
+            );
+        }
+        const { rows } = await pool.query('SELECT * FROM hero_slides ORDER BY sort_order ASC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete hero slide
+app.delete('/api/hero-slides/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM hero_slides WHERE id = $1', [id]);
+        res.json({ message: 'Slide deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Upload slide image
+app.post('/api/hero-slides/upload', uploadSlide.single('image'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+        const imageUrl = `http://localhost:${PORT}/uploads/slides/${req.file.filename}`;
+        res.json({ image_url: imageUrl, filename: req.file.filename });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

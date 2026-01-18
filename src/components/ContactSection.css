@@ -35,12 +35,12 @@
 .contact-item-icon {
     width: 48px;
     height: 48px;
-    background: rgba(251, 191, 36, 0.1);
+    background: rgba(37, 99, 235, 0.1);
     border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent-yellow);
+    color: var(--primary-blue);
     flex-shrink: 0;
 }
 

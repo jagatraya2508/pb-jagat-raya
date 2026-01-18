@@ -3,21 +3,43 @@ import { ArrowRight, Trophy, Users, Calendar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import './HeroSection.css'
 
+const API_URL = 'http://localhost:5001/api'
+
+// Default slides as fallback
+const defaultSlides = [
+    "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=1000&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1622394749320-7216a6902264?q=80&w=1000&auto=format&fit=crop"
+]
+
 function HeroSection() {
     const [currentSlide, setCurrentSlide] = useState(0)
-
-    const slides = [
-        "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1000&auto=format&fit=crop", // Badminton Player Portrait
-        "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?q=80&w=1000&auto=format&fit=crop", // Action Shot
-        "https://images.unsplash.com/photo-1622394749320-7216a6902264?q=80&w=1000&auto=format&fit=crop"  // Racket Close up
-    ]
+    const [slides, setSlides] = useState(defaultSlides)
 
     useEffect(() => {
+        // Fetch slides from API
+        const fetchSlides = async () => {
+            try {
+                const response = await fetch(`${API_URL}/hero-slides?active_only=true`)
+                const data = await response.json()
+                if (data && data.length > 0) {
+                    setSlides(data.map(slide => slide.image_url))
+                }
+            } catch (error) {
+                console.error('Error fetching slides:', error)
+                // Keep default slides on error
+            }
+        }
+        fetchSlides()
+    }, [])
+
+    useEffect(() => {
+        if (slides.length === 0) return
         const interval = setInterval(() => {
             setCurrentSlide((prev) => (prev + 1) % slides.length)
         }, 3000)
         return () => clearInterval(interval)
-    }, [])
+    }, [slides])
 
     return (
         <section id="beranda" className="hero">
@@ -28,10 +50,7 @@ function HeroSection() {
 
             <div className="hero-container">
                 <div className="hero-content">
-                    <div className="hero-badge">
-                        <Trophy size={16} />
-                        <span>Perkumpulan Bulutangkis Terbaik</span>
-                    </div>
+
 
                     <h1 className="hero-title">
                         Selamat Datang di
@@ -45,13 +64,11 @@ function HeroSection() {
                     </p>
 
                     <div className="hero-actions">
-                        <Link to="/kejuaraan" className="btn btn-accent btn-lg">
+                        <Link to="/kejuaraan" className="btn btn-lg" style={{ background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #fecaca 100%)', color: '#ffffff', boxShadow: '0 4px 15px rgba(220, 38, 38, 0.4)' }}>
                             Daftar Kejuaraan
                             <ArrowRight size={20} />
                         </Link>
-                        <a href="#tentang" className="btn btn-outline btn-lg">
-                            Pelajari Lebih Lanjut
-                        </a>
+
                     </div>
 
 

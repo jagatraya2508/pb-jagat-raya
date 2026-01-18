@@ -27,14 +27,10 @@
 }
 
 .sidebar-logo {
-    width: 48px;
-    height: 48px;
-    background: var(--gradient-accent);
-    border-radius: var(--radius-lg);
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
 }
 
 .sidebar-brand-name {
@@ -76,8 +72,8 @@
 }
 
 .sidebar-link.active {
-    color: var(--accent-yellow);
-    background: rgba(251, 191, 36, 0.1);
+    color: #1e40af;
+    background: rgba(59, 130, 246, 0.15);
 }
 
 .sidebar-footer {

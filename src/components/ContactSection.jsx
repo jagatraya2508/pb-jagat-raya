@@ -110,7 +110,7 @@ function ContactSection() {
                                 ></textarea>
                             </div>
 
-                            <button type="submit" className="btn btn-accent btn-lg">
+                            <button type="submit" className="btn btn-primary btn-lg">
                                 <Send size={20} />
                                 Kirim Pesan
                             </button>

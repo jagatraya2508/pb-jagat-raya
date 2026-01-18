@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import {
-    Users, Trophy, LogOut, Home, Settings,
+    Users, Trophy, LogOut, Home, Settings, Image,
     UserPlus, Calendar, BarChart3, Tag, ClipboardList, GitBranch, UserCog
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -58,11 +58,7 @@ function AdminDashboard() {
             <aside className="admin-sidebar">
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
-                        <Trophy size={24} />
-                    </div>
-                    <div className="sidebar-brand">
-                        <span className="sidebar-brand-name">PB. JAGAT RAYA</span>
-                        <span className="sidebar-brand-label">Admin Panel</span>
+                        <img src="/logo.png" alt="Logo" style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
                     </div>
                 </div>
 
@@ -94,6 +90,10 @@ function AdminDashboard() {
                     <Link to="/admin/users" className="sidebar-link">
                         <UserCog size={20} />
                         Pengguna
+                    </Link>
+                    <Link to="/admin/slides" className="sidebar-link">
+                        <Image size={20} />
+                        Kelola Slide
                     </Link>
                 </nav>
 

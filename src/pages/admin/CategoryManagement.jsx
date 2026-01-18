@@ -161,7 +161,7 @@ function CategoryManagement() {
                                 <p>Atur master data kategori pertandingan</p>
                             </div>
                         </div>
-                        <button className="btn btn-accent" onClick={openAddModal}>
+                        <button className="btn btn-primary" onClick={openAddModal}>
                             <Plus size={20} />
                             Tambah Kategori
                         </button>
@@ -292,7 +292,7 @@ function CategoryManagement() {
                                 <button type="button" className="btn btn-ghost" onClick={closeModal}>
                                     Batal
                                 </button>
-                                <button type="submit" className="btn btn-accent">
+                                <button type="submit" className="btn btn-primary">
                                     <Save size={18} />
                                     Simpan
                                 </button>
