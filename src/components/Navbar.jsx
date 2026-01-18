@@ -43,7 +43,7 @@ function Navbar() {
             <div className="navbar-container">
                 <Link to="/" className="navbar-brand">
                     <div className="navbar-logo">
-                        <img src="/logo.png" alt="Jagat Raya Logo" style={{ height: '40px', width: 'auto' }} />
+                        <img src="/logo.png" alt="Jagat Raya Logo" style={{ height: '60px', width: 'auto' }} />
                     </div>
                     <div className="navbar-brand-text">
                         <span className="navbar-brand-name">PB. JAGAT RAYA</span>
@@ -75,13 +75,13 @@ function Navbar() {
                                     <LayoutDashboard size={18} />
                                     Panel
                                 </Link>
-                                <button onClick={() => { signOut(); navigate('/'); }} className="btn btn-accent btn-sm">
+                                <button onClick={() => { signOut(); navigate('/'); }} className="btn btn-danger btn-sm">
                                     <LogOut size={18} />
                                     Logout
                                 </button>
                             </>
                         ) : (
-                            <Link to="/login" className="btn btn-accent btn-sm">
+                            <Link to="/login" className="btn btn-danger btn-sm">
                                 <LogIn size={18} />
                                 Login Admin
                             </Link>

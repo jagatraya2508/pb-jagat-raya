@@ -45,15 +45,15 @@
 }
 
 .navbar-brand-name {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-2xl);
     font-weight: 800;
-    color: var(--text-primary);
+    color: #2563eb;
     line-height: 1.2;
 }
 
 .navbar-brand-tagline {
-    font-size: var(--font-size-xs);
-    color: var(--accent-yellow-dark);
+    font-size: var(--font-size-sm);
+    color: #b91c1c;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-weight: 600;

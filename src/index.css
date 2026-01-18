@@ -209,7 +209,7 @@ ol {
 
 .btn-primary {
   background: var(--gradient-primary);
-  color: var(--text-primary);
+  color: #ffffff;
   box-shadow: var(--shadow-md), var(--shadow-glow);
 }
 
@@ -227,6 +227,17 @@ ol {
 .btn-accent:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg), 0 0 40px rgba(251, 191, 36, 0.4);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #ffffff;
+  box-shadow: var(--shadow-md), 0 0 20px rgba(220, 38, 38, 0.2);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 40px rgba(220, 38, 38, 0.4);
 }
 
 .btn-outline {

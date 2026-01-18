@@ -188,7 +188,7 @@ function TournamentPage() {
                                     )}
 
                                     <button
-                                        className="btn btn-accent btn-lg register-btn"
+                                        className="btn btn-primary btn-lg register-btn"
                                         onClick={() => handleRegister(tournament)}
                                     >
                                         Daftar Sekarang

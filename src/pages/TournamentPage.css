@@ -35,7 +35,7 @@
 }
 
 .title-icon {
-    color: var(--accent-yellow);
+    color: var(--primary-blue);
 }
 
 .tournament-title h1 {
@@ -90,7 +90,7 @@
 }
 
 .tournament-card-header svg {
-    color: var(--accent-yellow);
+    color: var(--primary-blue);
 }
 
 .tournament-card h3 {
