@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import {
     Users, Trophy, LogOut, Home, Settings,
-    UserPlus, Calendar, BarChart3, Tag, ClipboardList
+    UserPlus, Calendar, BarChart3, Tag, ClipboardList, GitBranch, UserCog
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import './AdminDashboard.css'
@@ -86,6 +86,14 @@ function AdminDashboard() {
                     <Link to="/admin/registrations" className="sidebar-link">
                         <ClipboardList size={20} />
                         Pendaftar
+                    </Link>
+                    <Link to="/admin/brackets" className="sidebar-link">
+                        <Calendar size={20} />
+                        Bagan
+                    </Link>
+                    <Link to="/admin/users" className="sidebar-link">
+                        <UserCog size={20} />
+                        Pengguna
                     </Link>
                 </nav>
 

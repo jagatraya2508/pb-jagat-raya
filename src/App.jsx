@@ -4,11 +4,14 @@ import ProtectedRoute from './components/ProtectedRoute'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import TournamentPage from './pages/TournamentPage'
+import TournamentBracketPage from './pages/TournamentBracketPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import MemberManagement from './pages/admin/MemberManagement'
 import TournamentManagement from './pages/admin/TournamentManagement'
 import CategoryManagement from './pages/admin/CategoryManagement'
 import RegistrationManagement from './pages/admin/RegistrationManagement'
+import BracketManagement from './pages/admin/BracketManagement'
+import UserManagement from './pages/admin/UserManagement'
 import './index.css'
 
 function App() {
@@ -20,6 +23,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/kejuaraan" element={<TournamentPage />} />
+          <Route path="/bracket/:tournamentId" element={<TournamentBracketPage />} />
 
           {/* Protected Admin Routes */}
           <Route
@@ -62,6 +66,22 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/brackets"
+            element={
+              <ProtectedRoute>
+                <BracketManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <UserManagement />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Router>
     </AuthProvider>
@@ -69,3 +89,4 @@ function App() {
 }
 
 export default App
+

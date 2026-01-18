@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
     ArrowLeft, Search, Edit, Trash2, X, Eye,
-    Users, Trophy, Home, LogOut, BarChart3, Save, Tag, ClipboardList
+    Users, Trophy, Home, LogOut, BarChart3, Save, Tag, ClipboardList, GitBranch, UserCog
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
@@ -149,6 +149,14 @@ function RegistrationManagement() {
                     <Link to="/admin/registrations" className="sidebar-link active">
                         <ClipboardList size={20} />
                         Pendaftar
+                    </Link>
+                    <Link to="/admin/brackets" className="sidebar-link">
+                        <GitBranch size={20} />
+                        Bagan
+                    </Link>
+                    <Link to="/admin/users" className="sidebar-link">
+                        <UserCog size={20} />
+                        Pengguna
                     </Link>
                 </nav>
 

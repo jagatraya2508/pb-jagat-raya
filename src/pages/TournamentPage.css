@@ -161,8 +161,18 @@
     /* Make the fee pop out a bit */
 }
 
+.tournament-card-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
 .register-btn {
-    width: 100%;
+    flex: 1;
+}
+
+.view-bracket-btn {
+    flex: 1;
 }
 
 /* Success State */

@@ -2,39 +2,38 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
     ArrowLeft, Plus, Search, Edit, Trash2, X,
-    Users, Trophy, Home, LogOut, BarChart3, Save, Tag, ClipboardList, GitBranch, UserCog
+    Users, Trophy, Home, LogOut, BarChart3, Save, Tag, ClipboardList, GitBranch, UserCog, Eye, EyeOff
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
 import './MemberManagement.css'
 
-function MemberManagement() {
+function UserManagement() {
     const { signOut } = useAuth()
-    const [members, setMembers] = useState([])
+    const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [showModal, setShowModal] = useState(false)
-    const [editingMember, setEditingMember] = useState(null)
+    const [editingUser, setEditingUser] = useState(null)
+    const [showPassword, setShowPassword] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        phone: '',
-        address: '',
-        birthdate: '',
-        category: 'dewasa',
-        status: 'aktif'
+        password: '',
+        role: 'admin',
+        status: 'active'
     })
 
     useEffect(() => {
-        fetchMembers()
+        fetchUsers()
     }, [])
 
-    const fetchMembers = async () => {
+    const fetchUsers = async () => {
         try {
-            const data = await api.members.list()
-            setMembers(data || [])
+            const data = await api.users.list()
+            setUsers(data || [])
         } catch (error) {
-            console.error('Error fetching members:', error)
+            console.error('Error fetching users:', error)
         } finally {
             setLoading(false)
         }
@@ -43,67 +42,96 @@ function MemberManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            if (editingMember) {
-                await api.members.update(editingMember.id, formData)
+            if (editingUser) {
+                // Only send password if it was changed
+                const updateData = { ...formData }
+                if (!updateData.password) {
+                    delete updateData.password
+                }
+                await api.users.update(editingUser.id, updateData)
             } else {
-                await api.members.create(formData)
+                if (!formData.password) {
+                    alert('Password wajib diisi')
+                    return
+                }
+                await api.users.create(formData)
             }
 
-            fetchMembers()
+            fetchUsers()
             closeModal()
         } catch (error) {
-            console.error('Error saving member:', error)
-            alert('Gagal menyimpan data.')
+            console.error('Error saving user:', error)
+            alert(error.message || 'Gagal menyimpan data.')
         }
     }
 
     const handleDelete = async (id) => {
-        if (!confirm('Yakin ingin menghapus anggota ini?')) return
+        if (!confirm('Yakin ingin menghapus pengguna ini?')) return
 
         try {
-            await api.members.delete(id)
-            fetchMembers()
+            await api.users.delete(id)
+            fetchUsers()
         } catch (error) {
-            console.error('Error deleting member:', error)
+            console.error('Error deleting user:', error)
         }
     }
 
-    const openEditModal = (member) => {
-        setEditingMember(member)
+    const openEditModal = (user) => {
+        setEditingUser(user)
         setFormData({
-            name: member.name,
-            email: member.email || '',
-            phone: member.phone || '',
-            address: member.address || '',
-            birthdate: member.birthdate || '',
-            category: member.category,
-            status: member.status
+            name: user.name,
+            email: user.email,
+            password: '', // Don't show password when editing
+            role: user.role,
+            status: user.status
         })
+        setShowPassword(false)
         setShowModal(true)
     }
 
     const openAddModal = () => {
-        setEditingMember(null)
+        setEditingUser(null)
         setFormData({
             name: '',
             email: '',
-            phone: '',
-            address: '',
-            birthdate: '',
-            category: 'dewasa',
-            status: 'aktif'
+            password: '',
+            role: 'admin',
+            status: 'active'
         })
+        setShowPassword(false)
         setShowModal(true)
     }
 
     const closeModal = () => {
         setShowModal(false)
-        setEditingMember(null)
+        setEditingUser(null)
+        setShowPassword(false)
     }
 
-    const filteredMembers = members.filter(member =>
-        member.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredUsers = users.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '-'
+        return new Date(dateString).toLocaleDateString('id-ID', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+    }
+
+    const getRoleBadgeClass = (role) => {
+        switch (role) {
+            case 'admin': return 'badge-success'
+            case 'operator': return 'badge-info'
+            case 'viewer': return 'badge-warning'
+            default: return 'badge-secondary'
+        }
+    }
 
     return (
         <div className="admin-layout">
@@ -123,7 +151,7 @@ function MemberManagement() {
                         <BarChart3 size={20} />
                         Dashboard
                     </Link>
-                    <Link to="/admin/members" className="sidebar-link active">
+                    <Link to="/admin/members" className="sidebar-link">
                         <Users size={20} />
                         Anggota
                     </Link>
@@ -143,7 +171,7 @@ function MemberManagement() {
                         <GitBranch size={20} />
                         Bagan
                     </Link>
-                    <Link to="/admin/users" className="sidebar-link">
+                    <Link to="/admin/users" className="sidebar-link active">
                         <UserCog size={20} />
                         Pengguna
                     </Link>
@@ -169,13 +197,13 @@ function MemberManagement() {
                                 <ArrowLeft size={20} />
                             </Link>
                             <div>
-                                <h1>Kelola Anggota</h1>
-                                <p>Tambah, edit, dan hapus data anggota</p>
+                                <h1>Kelola Pengguna</h1>
+                                <p>Tambah, edit, dan hapus data pengguna sistem</p>
                             </div>
                         </div>
                         <button className="btn btn-accent" onClick={openAddModal}>
                             <Plus size={20} />
-                            Tambah Anggota
+                            Tambah Pengguna
                         </button>
                     </div>
                 </header>
@@ -186,22 +214,22 @@ function MemberManagement() {
                         <Search size={20} />
                         <input
                             type="text"
-                            placeholder="Cari anggota..."
+                            placeholder="Cari pengguna..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
 
-                    {/* Members Table */}
+                    {/* Users Table */}
                     <div className="table-container">
                         <table className="table">
                             <thead>
                                 <tr>
                                     <th>Nama</th>
                                     <th>Email</th>
-                                    <th>Telepon</th>
-                                    <th>Kategori</th>
+                                    <th>Role</th>
                                     <th>Status</th>
+                                    <th>Login Terakhir</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -212,39 +240,40 @@ function MemberManagement() {
                                             <div className="spinner"></div>
                                         </td>
                                     </tr>
-                                ) : filteredMembers.length === 0 ? (
+                                ) : filteredUsers.length === 0 ? (
                                     <tr>
                                         <td colSpan="6" className="table-empty">
-                                            {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada anggota'}
+                                            {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada pengguna'}
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredMembers.map((member) => (
-                                        <tr key={member.id}>
-                                            <td className="member-name">{member.name}</td>
-                                            <td>{member.email || '-'}</td>
-                                            <td>{member.phone || '-'}</td>
+                                    filteredUsers.map((user) => (
+                                        <tr key={user.id}>
+                                            <td className="member-name">{user.name}</td>
+                                            <td>{user.email}</td>
                                             <td>
-                                                <span className={`badge badge-${member.category === 'anak' ? 'info' : 'warning'}`}>
-                                                    {member.category}
+                                                <span className={`badge ${getRoleBadgeClass(user.role)}`}>
+                                                    {user.role === 'admin' ? 'Admin' :
+                                                        user.role === 'operator' ? 'Operator' : 'Viewer'}
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`badge badge-${member.status === 'aktif' ? 'success' : 'danger'}`}>
-                                                    {member.status}
+                                                <span className={`badge badge-${user.status === 'active' ? 'success' : 'danger'}`}>
+                                                    {user.status === 'active' ? 'Aktif' : 'Nonaktif'}
                                                 </span>
                                             </td>
+                                            <td>{formatDate(user.last_login)}</td>
                                             <td>
                                                 <div className="table-actions">
                                                     <button
                                                         className="action-btn edit"
-                                                        onClick={() => openEditModal(member)}
+                                                        onClick={() => openEditModal(user)}
                                                     >
                                                         <Edit size={16} />
                                                     </button>
                                                     <button
                                                         className="action-btn delete"
-                                                        onClick={() => handleDelete(member.id)}
+                                                        onClick={() => handleDelete(user.id)}
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
@@ -264,7 +293,7 @@ function MemberManagement() {
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2>{editingMember ? 'Edit Anggota' : 'Tambah Anggota'}</h2>
+                            <h2>{editingUser ? 'Edit Pengguna' : 'Tambah Pengguna'}</h2>
                             <button className="modal-close" onClick={closeModal}>
                                 <X size={20} />
                             </button>
@@ -283,70 +312,73 @@ function MemberManagement() {
                                     />
                                 </div>
 
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label className="form-label">Email</label>
-                                        <input
-                                            type="email"
-                                            className="form-input"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Telepon</label>
-                                        <input
-                                            type="tel"
-                                            className="form-input"
-                                            value={formData.phone}
-                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
                                 <div className="form-group">
-                                    <label className="form-label">Alamat</label>
-                                    <textarea
+                                    <label className="form-label">Email *</label>
+                                    <input
+                                        type="email"
                                         className="form-input"
-                                        rows="2"
-                                        value={formData.address}
-                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        value={formData.email}
+                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                        required
                                     />
                                 </div>
 
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label className="form-label">Tanggal Lahir</label>
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        Password {editingUser ? '(kosongkan jika tidak diubah)' : '*'}
+                                    </label>
+                                    <div style={{ position: 'relative' }}>
                                         <input
-                                            type="date"
+                                            type={showPassword ? 'text' : 'password'}
                                             className="form-input"
-                                            value={formData.birthdate}
-                                            onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            required={!editingUser}
+                                            style={{ paddingRight: '40px' }}
                                         />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Kategori</label>
-                                        <select
-                                            className="form-input"
-                                            value={formData.category}
-                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            style={{
+                                                position: 'absolute',
+                                                right: '10px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                background: 'none',
+                                                border: 'none',
+                                                cursor: 'pointer',
+                                                padding: '4px'
+                                            }}
                                         >
-                                            <option value="anak">Anak-anak</option>
-                                            <option value="dewasa">Dewasa</option>
-                                        </select>
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="form-group">
-                                    <label className="form-label">Status</label>
-                                    <select
-                                        className="form-input"
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                    >
-                                        <option value="aktif">Aktif</option>
-                                        <option value="nonaktif">Non-Aktif</option>
-                                    </select>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label">Role</label>
+                                        <select
+                                            className="form-input"
+                                            value={formData.role}
+                                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        >
+                                            <option value="admin">Admin</option>
+                                            <option value="operator">Operator</option>
+                                            <option value="viewer">Viewer</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Status</label>
+                                        <select
+                                            className="form-input"
+                                            value={formData.status}
+                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        >
+                                            <option value="active">Aktif</option>
+                                            <option value="inactive">Nonaktif</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -367,4 +399,4 @@ function MemberManagement() {
     )
 }
 
-export default MemberManagement
+export default UserManagement

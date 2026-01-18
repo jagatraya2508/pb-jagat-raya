@@ -242,12 +242,20 @@ function TournamentPage() {
                                         </div>
                                     )}
 
-                                    <button
-                                        className="btn btn-primary btn-lg register-btn"
-                                        onClick={() => handleRegister(tournament)}
-                                    >
-                                        Daftar Sekarang
-                                    </button>
+                                    <div className="tournament-card-actions">
+                                        <button
+                                            className="btn btn-primary btn-lg register-btn"
+                                            onClick={() => handleRegister(tournament)}
+                                        >
+                                            Daftar Sekarang
+                                        </button>
+                                        <Link
+                                            to={`/bracket/${tournament.id}`}
+                                            className="btn btn-outline view-bracket-btn"
+                                        >
+                                            Lihat Bagan
+                                        </Link>
+                                    </div>
                                 </div>
                             ))}
                         </div>

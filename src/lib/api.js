@@ -134,5 +134,83 @@ export const api = {
             if (!res.ok) throw new Error('Failed to delete category');
             return await res.json();
         }
+    },
+    brackets: {
+        listByTournament: async (tournamentId) => {
+            const res = await fetch(`${API_URL}/brackets/${tournamentId}`);
+            if (!res.ok) throw new Error('Failed to fetch brackets');
+            return await res.json();
+        },
+        getByCategory: async (tournamentId, category) => {
+            const res = await fetch(`${API_URL}/brackets/${tournamentId}/${encodeURIComponent(category)}`);
+            if (!res.ok) throw new Error('Failed to fetch bracket');
+            return await res.json();
+        },
+        generate: async (data) => {
+            const res = await fetch(`${API_URL}/brackets/generate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to generate bracket');
+            }
+            return await res.json();
+        },
+        updateMatch: async (matchId, data) => {
+            const res = await fetch(`${API_URL}/brackets/match/${matchId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to update match');
+            return await res.json();
+        },
+        delete: async (id) => {
+            const res = await fetch(`${API_URL}/brackets/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Failed to delete bracket');
+            return await res.json();
+        }
+    },
+    users: {
+        list: async () => {
+            const res = await fetch(`${API_URL}/users`);
+            if (!res.ok) throw new Error('Failed to fetch users');
+            return await res.json();
+        },
+        create: async (data) => {
+            const res = await fetch(`${API_URL}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to create user');
+            }
+            return await res.json();
+        },
+        update: async (id, data) => {
+            const res = await fetch(`${API_URL}/users/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to update user');
+            }
+            return await res.json();
+        },
+        delete: async (id) => {
+            const res = await fetch(`${API_URL}/users/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Failed to delete user');
+            return await res.json();
+        }
     }
 };
