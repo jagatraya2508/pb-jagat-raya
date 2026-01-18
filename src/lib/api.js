@@ -67,6 +67,11 @@ export const api = {
         }
     },
     registrations: {
+        list: async () => {
+            const res = await fetch(`${API_URL}/registrations`);
+            if (!res.ok) throw new Error('Failed to fetch registrations');
+            return await res.json();
+        },
         listByTournament: async (tournamentId) => {
             const res = await fetch(`${API_URL}/tournaments/${tournamentId}/registrations`);
             if (!res.ok) throw new Error('Failed to fetch registrations');
@@ -79,6 +84,22 @@ export const api = {
                 body: JSON.stringify(data)
             });
             if (!res.ok) throw new Error('Failed to register');
+            return await res.json();
+        },
+        update: async (id, data) => {
+            const res = await fetch(`${API_URL}/registrations/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to update registration');
+            return await res.json();
+        },
+        delete: async (id) => {
+            const res = await fetch(`${API_URL}/registrations/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Failed to delete registration');
             return await res.json();
         }
     },

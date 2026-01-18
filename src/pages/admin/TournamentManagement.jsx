@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
     ArrowLeft, Plus, Search, Edit, Trash2, X, Eye,
-    Users, Trophy, Home, LogOut, BarChart3, Save, Calendar, Tag
+    Users, Trophy, Home, LogOut, BarChart3, Save, Calendar, Tag, ClipboardList
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
@@ -196,6 +196,10 @@ function TournamentManagement() {
                     <Link to="/admin/tournaments" className="sidebar-link active">
                         <Trophy size={20} />
                         Kejuaraan
+                    </Link>
+                    <Link to="/admin/registrations" className="sidebar-link">
+                        <ClipboardList size={20} />
+                        Pendaftar
                     </Link>
                 </nav>
 

@@ -47,9 +47,38 @@ const initDb = async () => {
                 email TEXT NOT NULL,
                 phone TEXT NOT NULL,
                 category TEXT NOT NULL,
+                club_name TEXT,
                 partner_name TEXT,
+                partner_phone TEXT,
+                partner_ranking INTEGER DEFAULT 0,
+                partner_points INTEGER DEFAULT 0,
+                ranking INTEGER DEFAULT 0,
+                points INTEGER DEFAULT 0,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
+
+            -- Add columns if they don't exist (for existing tables)
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='ranking') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN ranking INTEGER DEFAULT 0;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='points') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN points INTEGER DEFAULT 0;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='club_name') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN club_name TEXT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='partner_phone') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN partner_phone TEXT;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='partner_ranking') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN partner_ranking INTEGER DEFAULT 0;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tournament_registrations' AND column_name='partner_points') THEN
+                    ALTER TABLE tournament_registrations ADD COLUMN partner_points INTEGER DEFAULT 0;
+                END IF;
+            END $$;
 
         `);
         console.log('Database tables verified/created.');
@@ -240,12 +269,56 @@ app.get('/api/tournaments/:id/registrations', async (req, res) => {
 
 app.post('/api/registrations', async (req, res) => {
     try {
-        const { tournament_id, participant_name, email, phone, category, partner_name } = req.body;
+        const { tournament_id, participant_name, email, phone, category, club_name, partner_name, partner_phone, partner_ranking, partner_points, ranking, points } = req.body;
         const { rows } = await pool.query(
-            'INSERT INTO tournament_registrations (tournament_id, participant_name, email, phone, category, partner_name) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [tournament_id, participant_name, email, phone, category, partner_name]
+            'INSERT INTO tournament_registrations (tournament_id, participant_name, email, phone, category, club_name, partner_name, partner_phone, partner_ranking, partner_points, ranking, points) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+            [tournament_id, participant_name, email || '', phone, category, club_name || '', partner_name || '', partner_phone || '', partner_ranking || 0, partner_points || 0, ranking || 0, points || 0]
         );
         res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get all registrations with tournament info
+app.get('/api/registrations', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT r.*, t.name as tournament_name 
+            FROM tournament_registrations r 
+            LEFT JOIN tournaments t ON r.tournament_id = t.id 
+            ORDER BY r.created_at DESC
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update registration
+app.put('/api/registrations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { participant_name, email, phone, category, club_name, partner_name, partner_phone, partner_ranking, partner_points, ranking, points } = req.body;
+        const { rows } = await pool.query(
+            'UPDATE tournament_registrations SET participant_name = $1, email = $2, phone = $3, category = $4, club_name = $5, partner_name = $6, partner_phone = $7, partner_ranking = $8, partner_points = $9, ranking = $10, points = $11 WHERE id = $12 RETURNING *',
+            [participant_name, email || '', phone, category, club_name || '', partner_name || '', partner_phone || '', partner_ranking || 0, partner_points || 0, ranking || 0, points || 0, id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Registration not found' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete registration
+app.delete('/api/registrations/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query('DELETE FROM tournament_registrations WHERE id = $1', [id]);
+        res.json({ message: 'Registration deleted' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

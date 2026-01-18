@@ -25,14 +25,11 @@
 }
 
 .footer-logo {
-    width: 56px;
+    width: auto;
     height: 56px;
-    background: var(--gradient-accent);
-    border-radius: var(--radius-lg);
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: white;
+    justify-content: flex-start;
 }
 
 .footer-brand h3 {

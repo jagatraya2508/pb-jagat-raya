@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import {
     Users, Trophy, LogOut, Home, Settings,
-    UserPlus, Calendar, BarChart3, Tag
+    UserPlus, Calendar, BarChart3, Tag, ClipboardList
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import './AdminDashboard.css'
@@ -44,6 +44,13 @@ function AdminDashboard() {
             link: '/admin/categories',
             color: 'purple'
         },
+        {
+            title: 'Kelola Pendaftar',
+            description: 'Lihat dan kelola data pendaftar kejuaraan',
+            icon: ClipboardList,
+            link: '/admin/registrations',
+            color: 'green'
+        },
     ]
 
     return (
@@ -75,6 +82,10 @@ function AdminDashboard() {
                     <Link to="/admin/tournaments" className="sidebar-link">
                         <Trophy size={20} />
                         Kejuaraan
+                    </Link>
+                    <Link to="/admin/registrations" className="sidebar-link">
+                        <ClipboardList size={20} />
+                        Pendaftar
                     </Link>
                 </nav>
 

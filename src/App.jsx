@@ -8,6 +8,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import MemberManagement from './pages/admin/MemberManagement'
 import TournamentManagement from './pages/admin/TournamentManagement'
 import CategoryManagement from './pages/admin/CategoryManagement'
+import RegistrationManagement from './pages/admin/RegistrationManagement'
 import './index.css'
 
 function App() {
@@ -50,6 +51,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CategoryManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/registrations"
+            element={
+              <ProtectedRoute>
+                <RegistrationManagement />
               </ProtectedRoute>
             }
           />

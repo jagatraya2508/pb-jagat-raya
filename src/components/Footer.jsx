@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Trophy, MapPin, Phone, Mail, Facebook, Instagram, Youtube } from 'lucide-react'
+import { MapPin, Phone, Mail, Facebook, Instagram, Youtube } from 'lucide-react'
 import './Footer.css'
 
 function Footer() {
@@ -12,9 +12,9 @@ function Footer() {
                     {/* Brand Section */}
                     <div className="footer-brand">
                         <div className="footer-logo">
-                            <Trophy size={32} />
+                            <img src="/logo.png" alt="PB. Jagat Raya" style={{ height: '56px', width: 'auto' }} />
                         </div>
-                        <h3>PB. JAGAT RAYA</h3>
+                        <h3 style={{ color: '#2563eb' }}>PB. JAGAT RAYA</h3>
                         <p>Perkumpulan Bulutangkis yang berkomitmen untuk mengembangkan bakat dan prestasi atlet bulutangkis Indonesia.</p>
                         <div className="footer-social">
                             <a href="#" className="social-link" aria-label="Facebook">

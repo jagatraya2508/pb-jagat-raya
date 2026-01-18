@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Trophy, Calendar, MapPin, Users, Clock, Send, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Trophy, Calendar, MapPin, Users, Clock, Send, CheckCircle, Camera, Upload } from 'lucide-react'
 import { api } from '../lib/api'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -17,12 +17,29 @@ function TournamentPage() {
         email: '',
         phone: '',
         category: '',
-        partner_name: ''
+        club_name: '',
+        partner_name: '',
+        partner_phone: ''
     })
+    const [birthCertPhoto, setBirthCertPhoto] = useState(null)
+    const [photoPreview, setPhotoPreview] = useState(null)
+    const [partnerPhoto, setPartnerPhoto] = useState(null)
+    const [partnerPhotoPreview, setPartnerPhotoPreview] = useState(null)
+    const [masterCategories, setMasterCategories] = useState([])
 
     useEffect(() => {
         fetchTournaments()
+        fetchMasterCategories()
     }, [])
+
+    const fetchMasterCategories = async () => {
+        try {
+            const data = await api.categories.list()
+            setMasterCategories(data || [])
+        } catch (error) {
+            console.error('Error fetching categories:', error)
+        }
+    }
 
     const fetchTournaments = async () => {
         try {
@@ -53,10 +70,37 @@ function TournamentPage() {
             email: '',
             phone: '',
             category: firstCategory,
-            partner_name: ''
+            club_name: '',
+            partner_name: '',
+            partner_phone: ''
         })
+        setBirthCertPhoto(null)
+        setPhotoPreview(null)
+        setPartnerPhoto(null)
+        setPartnerPhotoPreview(null)
         setShowForm(true)
         setSubmitted(false)
+    }
+
+    const handlePhotoChange = (e, isPartner = false) => {
+        const file = e.target.files[0]
+        if (file) {
+            if (isPartner) {
+                setPartnerPhoto(file)
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                    setPartnerPhotoPreview(reader.result)
+                }
+                reader.readAsDataURL(file)
+            } else {
+                setBirthCertPhoto(file)
+                const reader = new FileReader()
+                reader.onloadend = () => {
+                    setPhotoPreview(reader.result)
+                }
+                reader.readAsDataURL(file)
+            }
+        }
     }
 
     const handleSubmit = async (e) => {
@@ -94,7 +138,18 @@ function TournamentPage() {
     }
 
     const categories = selectedTournament ? parseCategories(selectedTournament.categories) : []
-    const isDoubles = formData.category?.toLowerCase().includes('ganda')
+
+    // Check if current category is doubles - check both name and master category match_type
+    const checkIsDoubles = () => {
+        const catName = formData.category?.toLowerCase() || ''
+        // Check by name keywords
+        if (catName.includes('ganda') || catName.includes('double')) return true
+        // Check by master category match_type
+        const masterCat = masterCategories.find(c => c.name === formData.category)
+        if (masterCat && masterCat.match_type === 'double') return true
+        return false
+    }
+    const isDoubles = checkIsDoubles()
 
     return (
         <div className="tournament-page">
@@ -239,14 +294,13 @@ function TournamentPage() {
 
                                         <div className="form-row">
                                             <div className="form-group">
-                                                <label className="form-label">Email *</label>
+                                                <label className="form-label">Email (opsional)</label>
                                                 <input
                                                     type="email"
                                                     className="form-input"
                                                     placeholder="email@example.com"
                                                     value={formData.email}
                                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                    required
                                                 />
                                             </div>
                                             <div className="form-group">
@@ -278,18 +332,188 @@ function TournamentPage() {
                                             </select>
                                         </div>
 
+                                        <div className="form-group">
+                                            <label className="form-label">Nama PB / Klub</label>
+                                            <input
+                                                type="text"
+                                                className="form-input"
+                                                placeholder="Contoh: PB. Jagat Raya"
+                                                value={formData.club_name}
+                                                onChange={(e) => setFormData({ ...formData, club_name: e.target.value })}
+                                            />
+                                        </div>
+
                                         {isDoubles && (
-                                            <div className="form-group">
-                                                <label className="form-label">Nama Partner (untuk Ganda)</label>
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    placeholder="Masukkan nama partner Anda"
-                                                    value={formData.partner_name}
-                                                    onChange={(e) => setFormData({ ...formData, partner_name: e.target.value })}
-                                                />
+                                            <div className="partner-section" style={{
+                                                background: 'rgba(37, 99, 235, 0.1)',
+                                                padding: '1rem',
+                                                borderRadius: 'var(--radius-md)',
+                                                marginTop: '0.5rem'
+                                            }}>
+                                                <h4 style={{ marginBottom: '1rem', color: 'var(--primary-blue)' }}>
+                                                    Informasi Partner (untuk Ganda)
+                                                </h4>
+                                                <div className="form-row">
+                                                    <div className="form-group">
+                                                        <label className="form-label">Nama Partner *</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-input"
+                                                            placeholder="Masukkan nama partner"
+                                                            value={formData.partner_name}
+                                                            onChange={(e) => setFormData({ ...formData, partner_name: e.target.value })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">No. Telepon Partner *</label>
+                                                        <input
+                                                            type="tel"
+                                                            className="form-input"
+                                                            placeholder="08xxxxxxxxxx"
+                                                            value={formData.partner_phone}
+                                                            onChange={(e) => setFormData({ ...formData, partner_phone: e.target.value })}
+                                                            required
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label className="form-label">Foto Akta Partner *</label>
+                                                    <div className="photo-upload-container" style={{
+                                                        display: 'flex',
+                                                        gap: '1rem',
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'flex-start'
+                                                    }}>
+                                                        <div className="photo-upload-buttons" style={{
+                                                            display: 'flex',
+                                                            gap: '0.5rem',
+                                                            flexDirection: 'column'
+                                                        }}>
+                                                            <label className="btn btn-outline" style={{ cursor: 'pointer' }}>
+                                                                <Upload size={18} />
+                                                                Pilih File
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => handlePhotoChange(e, true)}
+                                                                    style={{ display: 'none' }}
+                                                                />
+                                                            </label>
+                                                            <label className="btn btn-primary" style={{ cursor: 'pointer' }}>
+                                                                <Camera size={18} />
+                                                                Ambil Foto
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    capture="environment"
+                                                                    onChange={(e) => handlePhotoChange(e, true)}
+                                                                    style={{ display: 'none' }}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                        {partnerPhotoPreview && (
+                                                            <div className="photo-preview" style={{
+                                                                flex: 1,
+                                                                minWidth: '150px',
+                                                                maxWidth: '200px'
+                                                            }}>
+                                                                <img
+                                                                    src={partnerPhotoPreview}
+                                                                    alt="Preview Akta Partner"
+                                                                    style={{
+                                                                        width: '100%',
+                                                                        height: 'auto',
+                                                                        borderRadius: 'var(--radius-md)',
+                                                                        border: '2px solid var(--primary-blue)'
+                                                                    }}
+                                                                />
+                                                                <p style={{
+                                                                    fontSize: 'var(--font-size-xs)',
+                                                                    color: 'var(--text-secondary)',
+                                                                    marginTop: '0.25rem',
+                                                                    textAlign: 'center'
+                                                                }}>
+                                                                    {partnerPhoto?.name}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
+
+                                        <div className="form-group">
+                                            <label className="form-label">Foto Akta Kelahiran *</label>
+                                            <div className="photo-upload-container" style={{
+                                                display: 'flex',
+                                                gap: '1rem',
+                                                flexWrap: 'wrap',
+                                                alignItems: 'flex-start'
+                                            }}>
+                                                <div className="photo-upload-buttons" style={{
+                                                    display: 'flex',
+                                                    gap: '0.5rem',
+                                                    flexDirection: 'column'
+                                                }}>
+                                                    <label className="btn btn-outline" style={{ cursor: 'pointer' }}>
+                                                        <Upload size={18} />
+                                                        Pilih File
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handlePhotoChange}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                    </label>
+                                                    <label className="btn btn-primary" style={{ cursor: 'pointer' }}>
+                                                        <Camera size={18} />
+                                                        Ambil Foto
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            capture="environment"
+                                                            onChange={handlePhotoChange}
+                                                            style={{ display: 'none' }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                                {photoPreview && (
+                                                    <div className="photo-preview" style={{
+                                                        flex: 1,
+                                                        minWidth: '150px',
+                                                        maxWidth: '200px'
+                                                    }}>
+                                                        <img
+                                                            src={photoPreview}
+                                                            alt="Preview Akta"
+                                                            style={{
+                                                                width: '100%',
+                                                                height: 'auto',
+                                                                borderRadius: 'var(--radius-md)',
+                                                                border: '2px solid var(--primary-blue)'
+                                                            }}
+                                                        />
+                                                        <p style={{
+                                                            fontSize: 'var(--font-size-xs)',
+                                                            color: 'var(--text-secondary)',
+                                                            marginTop: '0.25rem',
+                                                            textAlign: 'center'
+                                                        }}>
+                                                            {birthCertPhoto?.name}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p style={{
+                                                fontSize: 'var(--font-size-xs)',
+                                                color: 'var(--text-muted)',
+                                                marginTop: '0.5rem'
+                                            }}>
+                                                Upload foto Akta Kelahiran atau ambil langsung dari kamera
+                                            </p>
+                                        </div>
                                     </div>
 
                                     <div className="modal-footer">
