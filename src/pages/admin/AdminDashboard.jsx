@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import {
-    Users, Trophy, LogOut, Home, Settings, Image,
+    Users, Trophy, LogOut, Home, Settings, Image, FileText,
     UserPlus, Calendar, BarChart3, Tag, ClipboardList, GitBranch, UserCog
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -94,6 +94,10 @@ function AdminDashboard() {
                     <Link to="/admin/slides" className="sidebar-link">
                         <Image size={20} />
                         Kelola Slide
+                    </Link>
+                    <Link to="/admin/content" className="sidebar-link">
+                        <FileText size={20} />
+                        Konten
                     </Link>
                 </nav>
 

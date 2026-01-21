@@ -13,6 +13,7 @@ import RegistrationManagement from './pages/admin/RegistrationManagement'
 import BracketManagement from './pages/admin/BracketManagement'
 import UserManagement from './pages/admin/UserManagement'
 import SlideManagement from './pages/admin/SlideManagement'
+import ContentManagement from './pages/admin/ContentManagement'
 import './index.css'
 
 function App() {
@@ -88,6 +89,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SlideManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/content"
+            element={
+              <ProtectedRoute>
+                <ContentManagement />
               </ProtectedRoute>
             }
           />

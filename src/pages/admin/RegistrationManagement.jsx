@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
-    ArrowLeft, Search, Edit, Trash2, X, Eye,
+    ArrowLeft, Search, Edit, Trash2, X, Eye, FileText,
     Users, Trophy, Home, LogOut, BarChart3, Save, Tag, ClipboardList, GitBranch, UserCog
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -11,9 +11,12 @@ import './MemberManagement.css'
 function RegistrationManagement() {
     const { signOut } = useAuth()
     const [registrations, setRegistrations] = useState([])
+    const [tournaments, setTournaments] = useState([])
+    const [selectedTournament, setSelectedTournament] = useState(null)
     const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
+    const [activeTab, setActiveTab] = useState('all')
     const [showModal, setShowModal] = useState(false)
     const [editingRegistration, setEditingRegistration] = useState(null)
     const [formData, setFormData] = useState({
@@ -32,9 +35,27 @@ function RegistrationManagement() {
     })
 
     useEffect(() => {
-        fetchRegistrations()
+        fetchTournaments()
         fetchCategories()
     }, [])
+
+    useEffect(() => {
+        if (selectedTournament) {
+            fetchRegistrations(selectedTournament.id)
+            setActiveTab('all') // Reset tab when tournament changes
+        }
+    }, [selectedTournament])
+
+    const fetchTournaments = async () => {
+        try {
+            const data = await api.tournaments.list()
+            setTournaments(data || [])
+        } catch (error) {
+            console.error('Error fetching tournaments:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const fetchCategories = async () => {
         try {
@@ -45,9 +66,10 @@ function RegistrationManagement() {
         }
     }
 
-    const fetchRegistrations = async () => {
+    const fetchRegistrations = async (tournamentId) => {
+        setLoading(true)
         try {
-            const data = await api.registrations.list()
+            const data = await api.registrations.listByTournament(tournamentId)
             setRegistrations(data || [])
         } catch (error) {
             console.error('Error fetching registrations:', error)
@@ -60,7 +82,9 @@ function RegistrationManagement() {
         e.preventDefault()
         try {
             await api.registrations.update(editingRegistration.id, formData)
-            fetchRegistrations()
+            if (selectedTournament) {
+                fetchRegistrations(selectedTournament.id)
+            }
             closeModal()
         } catch (error) {
             console.error('Error updating registration:', error)
@@ -73,17 +97,40 @@ function RegistrationManagement() {
 
         try {
             await api.registrations.delete(id)
-            fetchRegistrations()
+            if (selectedTournament) {
+                fetchRegistrations(selectedTournament.id)
+            }
         } catch (error) {
             console.error('Error deleting registration:', error)
         }
     }
 
-    const filteredRegistrations = registrations.filter(r =>
-        r.participant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.tournament_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.phone?.includes(searchTerm)
-    )
+    // Parse categories from tournament data
+    const getTournamentCategories = () => {
+        if (!selectedTournament || !selectedTournament.categories) return []
+        try {
+            // Check if it's JSON
+            const parsed = JSON.parse(selectedTournament.categories)
+            if (Array.isArray(parsed)) return parsed.map(c => c.name || c)
+            return []
+        } catch {
+            // Fallback to comma separated
+            return selectedTournament.categories.split(',').map(c => c.trim())
+        }
+    }
+
+    const tournamentCategories = getTournamentCategories()
+
+    const filteredRegistrations = registrations.filter(r => {
+        const matchesSearch =
+            r.participant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.tournament_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            r.phone?.includes(searchTerm)
+
+        const matchesTab = activeTab === 'all' || r.category === activeTab
+
+        return matchesSearch && matchesTab
+    })
 
     const openEditModal = (registration) => {
         setEditingRegistration(registration)
@@ -144,10 +191,10 @@ function RegistrationManagement() {
                         <Trophy size={20} />
                         Kejuaraan
                     </Link>
-                    <Link to="/admin/registrations" className="sidebar-link active">
+                    <button className={`sidebar-link ${!selectedTournament ? 'active' : ''}`} onClick={() => setSelectedTournament(null)} style={{ width: '100%', border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}>
                         <ClipboardList size={20} />
                         Pendaftar
-                    </Link>
+                    </button>
                     <Link to="/admin/brackets" className="sidebar-link">
                         <GitBranch size={20} />
                         Bagan
@@ -155,6 +202,10 @@ function RegistrationManagement() {
                     <Link to="/admin/users" className="sidebar-link">
                         <UserCog size={20} />
                         Pengguna
+                    </Link>
+                    <Link to="/admin/content" className="sidebar-link">
+                        <FileText size={20} />
+                        Konten
                     </Link>
                 </nav>
 
@@ -174,91 +225,179 @@ function RegistrationManagement() {
                 <header className="admin-header">
                     <div className="admin-header-content">
                         <div className="header-title-group">
-                            <Link to="/admin" className="back-link">
-                                <ArrowLeft size={20} />
-                            </Link>
+                            {selectedTournament ? (
+                                <button onClick={() => setSelectedTournament(null)} className="back-link-btn" style={{ marginRight: '1rem', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                    <ArrowLeft size={20} />
+                                </button>
+                            ) : (
+                                <Link to="/admin" className="back-link">
+                                    <ArrowLeft size={20} />
+                                </Link>
+                            )}
                             <div>
-                                <h1>Data Pendaftar</h1>
-                                <p>Lihat dan kelola data pendaftar kejuaraan</p>
+                                <h1>{selectedTournament ? `Pendaftar: ${selectedTournament.name}` : 'Pilih Kejuaraan'}</h1>
+                                <p>{selectedTournament ? 'Kelola data pendaftar untuk kejuaraan ini' : 'Pilih kejuaraan untuk melihat pendaftar'}</p>
                             </div>
                         </div>
                     </div>
                 </header>
 
                 <div className="admin-content">
-                    {/* Search */}
-                    <div className="search-bar">
-                        <Search size={20} />
-                        <input
-                            type="text"
-                            placeholder="Cari nama pendaftar, kejuaraan, atau telepon..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
+                    {!selectedTournament ? (
+                        /* Tournament Selection View */
+                        <div className="tournaments-grid-admin" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                            {loading ? (
+                                <div className="loading-state">
+                                    <div className="spinner"></div>
+                                    <p>Memuat kejuaraan...</p>
+                                </div>
+                            ) : tournaments.length === 0 ? (
+                                <div className="empty-state">
+                                    <Trophy size={48} />
+                                    <h3>Belum ada kejuaraan</h3>
+                                    <p>Buat kejuaraan baru terlebih dahulu.</p>
+                                    <Link to="/admin/tournaments" className="btn btn-primary">
+                                        Buat Kejuaraan
+                                    </Link>
+                                </div>
+                            ) : (
+                                tournaments.map(tournament => (
+                                    <div key={tournament.id} className="card tournament-card-admin" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                        <div className="card-header" style={{ marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <h3 style={{ margin: 0 }}>{tournament.name}</h3>
+                                                <span className={`badge badge-${tournament.status === 'open' ? 'success' : tournament.status === 'completed' ? 'secondary' : 'warning'}`}>
+                                                    {tournament.status === 'open' ? 'Buka' : tournament.status === 'completed' ? 'Selesai' : 'Tutup'}
+                                                </span>
+                                            </div>
+                                            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                                                {formatDate(tournament.start_date)} - {formatDate(tournament.end_date)}
+                                            </p>
+                                        </div>
+                                        <div className="card-body" style={{ flex: 1 }}>
+                                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                                                {tournament.location || 'Lokasi belum ditentukan'}
+                                            </p>
+                                            <div className="stats" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                                <span style={{ fontSize: '0.8rem', background: 'var(--bg-secondary)', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                                    {tournamentCategories.length || 0} Kategori
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="card-footer" style={{ marginTop: 'auto' }}>
+                                            <button
+                                                className="btn btn-primary"
+                                                style={{ width: '100%' }}
+                                                onClick={() => setSelectedTournament(tournament)}
+                                            >
+                                                Lihat Pendaftar
+                                                <ArrowLeft size={16} style={{ transform: 'rotate(180deg)' }} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    ) : (
+                        /* Registration List View */
+                        <>
+                            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                                {/* Category Tabs */}
+                                <div className="category-tabs" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', maxWidth: '100%' }}>
+                                    <button
+                                        className={`btn ${activeTab === 'all' ? 'btn-primary' : 'btn-outline'}`}
+                                        onClick={() => setActiveTab('all')}
+                                        style={{ whiteSpace: 'nowrap' }}
+                                    >
+                                        Semua
+                                    </button>
+                                    {tournamentCategories.map((cat, idx) => (
+                                        <button
+                                            key={idx}
+                                            className={`btn ${activeTab === cat ? 'btn-primary' : 'btn-outline'}`}
+                                            onClick={() => setActiveTab(cat)}
+                                            style={{ whiteSpace: 'nowrap' }}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
 
-                    {/* Registrations Table */}
-                    <div className="table-container">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Nama Peserta</th>
-                                    <th>Kejuaraan</th>
-                                    <th>Kategori</th>
-                                    <th>Telepon</th>
-                                    <th>Ranking</th>
-                                    <th>Poin</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan="7" className="table-empty">
-                                            <div className="spinner"></div>
-                                        </td>
-                                    </tr>
-                                ) : filteredRegistrations.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="7" className="table-empty">
-                                            {searchTerm ? 'Tidak ada hasil pencarian' : 'Belum ada pendaftar'}
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredRegistrations.map((reg) => (
-                                        <tr key={reg.id}>
-                                            <td className="member-name">{reg.participant_name}</td>
-                                            <td>
-                                                <span className="badge badge-info">{reg.tournament_name || '-'}</span>
-                                            </td>
-                                            <td>{reg.category}</td>
-                                            <td>{reg.phone}</td>
-                                            <td><span className="badge badge-warning">{reg.ranking || 0}</span></td>
-                                            <td><span className="badge badge-success">{reg.points || 0}</span></td>
-                                            <td>
-                                                <div className="table-actions">
-                                                    <button
-                                                        className="action-btn edit"
-                                                        onClick={() => openEditModal(reg)}
-                                                        title="Edit"
-                                                    >
-                                                        <Edit size={16} />
-                                                    </button>
-                                                    <button
-                                                        className="action-btn delete"
-                                                        onClick={() => handleDelete(reg.id)}
-                                                        title="Hapus"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
+                                {/* Search */}
+                                <div className="search-bar" style={{ margin: 0 }}>
+                                    <Search size={20} />
+                                    <input
+                                        type="text"
+                                        placeholder="Cari..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        style={{ width: '200px' }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Registrations Table */}
+                            <div className="table-container">
+                                <table className="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Peserta</th>
+                                            <th>Kategori</th>
+                                            <th>Telepon</th>
+                                            <th>Ranking</th>
+                                            <th>Poin</th>
+                                            <th>Aksi</th>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </thead>
+                                    <tbody>
+                                        {loading ? (
+                                            <tr>
+                                                <td colSpan="6" className="table-empty">
+                                                    <div className="spinner"></div>
+                                                </td>
+                                            </tr>
+                                        ) : filteredRegistrations.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="6" className="table-empty">
+                                                    {searchTerm ? 'Tidak ada hasil pencarian' : activeTab !== 'all' ? `Belum ada pendaftar di kategori ${activeTab}` : 'Belum ada pendaftar'}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredRegistrations.map((reg) => (
+                                                <tr key={reg.id}>
+                                                    <td className="member-name">{reg.participant_name}</td>
+                                                    <td>
+                                                        <span className="badge badge-info">{reg.category || '-'}</span>
+                                                    </td>
+                                                    <td>{reg.phone}</td>
+                                                    <td><span className="badge badge-warning">{reg.ranking || 0}</span></td>
+                                                    <td><span className="badge badge-success">{reg.points || 0}</span></td>
+                                                    <td>
+                                                        <div className="table-actions">
+                                                            <button
+                                                                className="action-btn edit"
+                                                                onClick={() => openEditModal(reg)}
+                                                                title="Edit"
+                                                            >
+                                                                <Edit size={16} />
+                                                            </button>
+                                                            <button
+                                                                className="action-btn delete"
+                                                                onClick={() => handleDelete(reg.id)}
+                                                                title="Hapus"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
                 </div>
             </main>
 

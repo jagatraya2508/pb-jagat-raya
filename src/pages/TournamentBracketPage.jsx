@@ -169,54 +169,105 @@ function TournamentBracketPage() {
 
                             {/* Bracket Display */}
                             {bracket && (
-                                <div className="bracket-display">
-                                    <div className="bracket-display-header">
-                                        <h2>Bagan Pertandingan - {selectedCategory}</h2>
+                                <div className="bracket-container">
+                                    <div className="bracket-status-bar">
                                         <span className={`status-badge status-${bracket.status}`}>
                                             {bracket.status === 'active' ? 'Berlangsung' :
                                                 bracket.status === 'completed' ? 'Selesai' : 'Draft'}
                                         </span>
+                                        <span className="bracket-info">
+                                            {bracket.total_rounds ? Math.pow(2, bracket.total_rounds) : 0} peserta • {bracket.total_rounds} babak
+                                        </span>
                                     </div>
 
-                                    <div className="bracket-scroll">
-                                        <div className="bracket-tree">
-                                            {Object.keys(matchesByRound).sort((a, b) => a - b).map(round => (
-                                                <div key={round} className="round-column">
-                                                    <div className="round-title">
-                                                        {getRoundName(parseInt(round), totalRounds)}
-                                                    </div>
-                                                    <div className="round-matches">
-                                                        {matchesByRound[round].map(match => (
-                                                            <div key={match.id} className={`match-card ${match.status}`}>
-                                                                <div className={`match-team ${match.winner_id === match.player1_id ? 'winner' : ''}`}>
-                                                                    <span className="team-name">{match.player1_name || 'TBD'}</span>
-                                                                    {match.player1_score !== null && (
-                                                                        <span className="team-score">{match.player1_score}</span>
-                                                                    )}
-                                                                </div>
-                                                                <div className={`match-team ${match.winner_id === match.player2_id ? 'winner' : ''}`}>
-                                                                    <span className="team-name">{match.player2_name || 'TBD'}</span>
-                                                                    {match.player2_score !== null && (
-                                                                        <span className="team-score">{match.player2_score}</span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                    <div className="bracket-view traditional">
+                                        {Object.keys(matchesByRound).sort((a, b) => a - b).map((round, roundIdx) => (
+                                            <div key={round} className="bracket-round" style={{ '--round': roundIdx }}>
+                                                <div className="round-header">
+                                                    {getRoundName(parseInt(round), totalRounds)}
                                                 </div>
-                                            ))}
-                                        </div>
+                                                <div className="round-matches">
+                                                    {matchesByRound[round].map((match) => (
+                                                        <div
+                                                            key={match.id}
+                                                            className={`bracket-matchup ${match.status}`}
+                                                        >
+                                                            {/* Connector lines */}
+                                                            {parseInt(round) < totalRounds && (
+                                                                <div className="connector-right"></div>
+                                                            )}
+                                                            {parseInt(round) > 1 && (
+                                                                <div className="connector-left"></div>
+                                                            )}
+
+                                                            {/* Match box */}
+                                                            <div className="match-box">
+                                                                {/* Player 1 */}
+                                                                <div className={`match-row ${match.winner_id === match.player1_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player1_id ? 'loser' : ''}`}>
+                                                                    <span className="seed-number">{match.position * 2 - 1}</span>
+                                                                    <div className="player-info">
+                                                                        <span className="player-name">
+                                                                            {match.player1_name || (parseInt(round) === 1 ? 'Bye' : '-')}
+                                                                            {match.player1_rank > 0 && <span className="player-rank">#{match.player1_rank}</span>}
+                                                                        </span>
+                                                                    </div>
+                                                                    {match.winner_id === match.player1_id && (
+                                                                        <span className="winner-dot"></span>
+                                                                    )}
+                                                                    <div className="score-display">
+                                                                        {match.player1_score !== null && (
+                                                                            <span className="score">{match.player1_score}</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Player 2 */}
+                                                                <div className={`match-row ${match.winner_id === match.player2_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player2_id ? 'loser' : ''}`}>
+                                                                    <span className="seed-number">{match.position * 2}</span>
+                                                                    <div className="player-info">
+                                                                        <span className="player-name">
+                                                                            {match.player2_name || (parseInt(round) === 1 ? 'Bye' : '-')}
+                                                                            {match.player2_rank > 0 && <span className="player-rank">#{match.player2_rank}</span>}
+                                                                        </span>
+                                                                    </div>
+                                                                    {match.winner_id === match.player2_id && (
+                                                                        <span className="winner-dot"></span>
+                                                                    )}
+                                                                    <div className="score-display">
+                                                                        {match.player2_score !== null && (
+                                                                            <span className="score">{match.player2_score}</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Match time/court info */}
+                                                                {match.match_time && (
+                                                                    <div className="match-time">
+                                                                        <Calendar size={12} />
+                                                                        {new Date(match.match_time).toLocaleString('id-ID', {
+                                                                            weekday: 'short',
+                                                                            day: 'numeric',
+                                                                            month: 'short',
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
 
                                     {bracket.status === 'completed' && (
-                                        <div className="champion-banner">
-                                            <Trophy size={40} className="champion-trophy" />
-                                            <div className="champion-info">
-                                                <span className="champion-label">JUARA</span>
-                                                <span className="champion-name">
-                                                    {matches.find(m => m.round === totalRounds)?.winner_name || '-'}
-                                                </span>
-                                            </div>
+                                        <div className="champion-section">
+                                            <Trophy size={48} className="champion-icon" />
+                                            <h3>Juara</h3>
+                                            <p className="champion-name">
+                                                {matches.find(m => m.round === totalRounds)?.winner_name || '-'}
+                                            </p>
                                         </div>
                                     )}
                                 </div>

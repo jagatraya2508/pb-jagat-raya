@@ -1,77 +1,66 @@
+import { useState, useEffect } from 'react'
 import { Calendar, Clock, MapPin, Users } from 'lucide-react'
+import { api } from '../lib/api'
 import './ActivitiesSection.css'
 
 function ActivitiesSection() {
-    const schedules = [
-        {
-            day: 'Senin',
-            time: '16:00 - 18:00',
-            type: 'Latihan Anak-anak',
-            location: 'GOR Utama'
-        },
-        {
-            day: 'Selasa',
-            time: '18:00 - 21:00',
-            type: 'Latihan Dewasa',
-            location: 'GOR Utama'
-        },
-        {
-            day: 'Rabu',
-            time: '16:00 - 18:00',
-            type: 'Latihan Anak-anak',
-            location: 'GOR Utama'
-        },
-        {
-            day: 'Kamis',
-            time: '18:00 - 21:00',
-            type: 'Latihan Dewasa',
-            location: 'GOR Utama'
-        },
-        {
-            day: 'Jumat',
-            time: '16:00 - 18:00',
-            type: 'Latihan Anak-anak',
-            location: 'GOR Utama'
-        },
-        {
-            day: 'Sabtu',
-            time: '08:00 - 12:00',
-            type: 'Sparring & Pertandingan',
-            location: 'GOR Utama'
-        },
-        {
-            day: 'Minggu',
-            time: '08:00 - 12:00',
-            type: 'Latihan Bebas',
-            location: 'GOR Utama'
-        }
-    ]
+    const [content, setContent] = useState(null)
+    const [loading, setLoading] = useState(true)
 
-    const activities = [
-        {
-            icon: Calendar,
-            title: 'Latihan Rutin',
-            description: 'Latihan terstruktur setiap minggu dengan pelatih berpengalaman'
-        },
-        {
-            icon: Users,
-            title: 'Sparring Match',
-            description: 'Pertandingan persahabatan untuk mengasah kemampuan bermain'
-        },
-        {
-            icon: Clock,
-            title: 'Kejuaraan',
-            description: 'Mengikuti berbagai turnamen tingkat lokal dan nasional'
+    useEffect(() => {
+        const fetchContent = async () => {
+            try {
+                const data = await api.content.list()
+                setContent(data)
+            } catch (error) {
+                console.error('Error fetching activities content:', error)
+            } finally {
+                setLoading(false)
+            }
         }
-    ]
+        fetchContent()
+    }, [])
+
+    const getValue = (key, field, fallback) => {
+        if (!content || !content[key] || !content[key][field]) return fallback
+        return content[key][field]
+    }
+
+    // Helper to get Icon component from string name
+    const getIcon = (iconName) => {
+        const icons = { Calendar, Clock, MapPin, Users }
+        return icons[iconName] || Calendar
+    }
+
+    // Parse schedule JSON safely
+    const getSchedule = () => {
+        const raw = getValue('activity_schedule', 'content', '[]')
+        try {
+            return JSON.parse(raw)
+        } catch (e) {
+            console.error('Error parsing schedule JSON:', e)
+            return []
+        }
+    }
+
+    const schedules = getSchedule()
+
+    // Dynamic activities from individual keys
+    const activityKeys = ['activity_card_1', 'activity_card_2', 'activity_card_3']
+    const activities = activityKeys.map(key => ({
+        icon: getIcon(getValue(key, 'icon', 'Calendar')),
+        title: getValue(key, 'title', ''),
+        description: getValue(key, 'content', '')
+    })).filter(a => a.title) // Only show if title exists
+
+    if (loading) return null
 
     return (
         <section id="kegiatan" className="activities section">
             <div className="container">
-                <h2 className="section-title">Kegiatan Kami</h2>
+                <h2 className="section-title">{getValue('activity_main', 'title', 'Kegiatan Kami')}</h2>
                 <p className="section-subtitle">
-                    Berbagai kegiatan rutin yang kami selenggarakan untuk mengembangkan
-                    kemampuan dan prestasi para anggota.
+                    {getValue('activity_main', 'content', 'Berbagai kegiatan rutin yang kami selenggarakan untuk mengembangkan kemampuan dan prestasi para anggota.')}
                 </p>
 
                 <div className="activities-features">

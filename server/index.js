@@ -43,6 +43,34 @@ const uploadSlide = multer({
     }
 });
 
+// Configure multer for gallery uploads
+const galleryDir = path.join(uploadsDir, 'gallery');
+if (!fs.existsSync(galleryDir)) fs.mkdirSync(galleryDir);
+
+const galleryStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, galleryDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'gallery-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const uploadGallery = multer({
+    storage: galleryStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png|gif|webp/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            return cb(null, true);
+        }
+        cb(new Error('Only image files are allowed!'));
+    }
+});
+
 app.use(cors());
 app.use(express.json());
 
@@ -178,6 +206,43 @@ const initDb = async () => {
             END $$;
 
         `);
+
+        // Initialize content_sections table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS content_sections (
+                key TEXT PRIMARY KEY,
+                title TEXT,
+                content TEXT,
+                icon TEXT,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        `);
+
+        // Seed default content
+        await pool.query(`
+            INSERT INTO content_sections (key, title, content, icon)
+            VALUES 
+            ('about_main', 'Tentang Kami', 'PB. JAGAT RAYA adalah perkumpulan bulutangkis yang berdedikasi untuk mengembangkan bakat dan prestasi atlet bulutangkis Indonesia.', null),
+            ('about_history', 'Sejarah Kami', 'Didirikan pada tahun 2014, PB. JAGAT RAYA bermula dari sekelompok pecinta bulutangkis yang memiliki visi untuk mengembangkan olahraga bulutangkis di Indonesia. Berbekal semangat dan dedikasi tinggi, kami terus berkembang hingga menjadi salah satu perkumpulan bulutangkis yang diakui di tingkat lokal.\\n\\nDengan fasilitas modern dan pelatih berpengalaman, kami telah berhasil mencetak puluhan atlet berprestasi yang mengharumkan nama daerah di berbagai kejuaraan bulutangkis.', null),
+            ('about_vision', 'Visi', 'Menjadi perkumpulan bulutangkis terdepan yang menghasilkan atlet berprestasi di tingkat nasional dan internasional.', 'Target'),
+            ('about_mission', 'Misi', 'Memberikan pelatihan berkualitas, mengembangkan karakter atlet, dan menciptakan lingkungan yang mendukung prestasi.', 'Award'),
+            ('about_community', 'Komunitas', 'Membangun komunitas bulutangkis yang solid, saling mendukung, dan berorientasi pada pengembangan bersama.', 'Users'),
+            ('about_values', 'Nilai', 'Menjunjung tinggi sportivitas, disiplin, kerja keras, dan semangat pantang menyerah dalam setiap latihan dan pertandingan.', 'Heart'),
+            
+            -- Activities Section
+            ('activity_main', 'Kegiatan Kami', 'Berbagai kegiatan rutin yang kami selenggarakan untuk mengembangkan kemampuan dan prestasi para anggota.', null),
+            ('activity_card_1', 'Latihan Rutin', 'Latihan terstruktur setiap minggu dengan pelatih berpengalaman', 'Calendar'),
+            ('activity_card_2', 'Sparring Match', 'Pertandingan persahabatan untuk mengasah kemampuan bermain', 'Users'),
+            ('activity_card_3', 'Kejuaraan', 'Mengikuti berbagai turnamen tingkat lokal dan nasional', 'Clock'),
+            ('activity_schedule', 'Jadwal Latihan', '[{"day":"Senin","time":"16:00 - 18:00","type":"Latihan Anak-anak","location":"GOR Utama"},{"day":"Selasa","time":"18:00 - 21:00","type":"Latihan Dewasa","location":"GOR Utama"},{"day":"Rabu","time":"16:00 - 18:00","type":"Latihan Anak-anak","location":"GOR Utama"},{"day":"Kamis","time":"18:00 - 21:00","type":"Latihan Dewasa","location":"GOR Utama"},{"day":"Jumat","time":"16:00 - 18:00","type":"Latihan Anak-anak","location":"GOR Utama"},{"day":"Sabtu","time":"08:00 - 12:00","type":"Sparring & Pertandingan","location":"GOR Utama"},{"day":"Minggu","time":"08:00 - 12:00","type":"Latihan Bebas","location":"GOR Utama"}]', 'Calendar'),
+            
+            -- Gallery Section
+            ('gallery_main', 'Galeri Kegiatan', 'Dokumentasi berbagai kegiatan dan momen berharga PB. JAGAT RAYA', null),
+            ('gallery_groups', 'Groups', '[{"title":"Latihan & Pembinaan","items":[{"title":"Latihan Rutin","description":"Kegiatan latihan rutin setiap minggu","icon":"🏸"},{"title":"Pelatihan Khusus","description":"Sesi pelatihan teknik bersama pelatih","icon":"📋"}]},{"title":"Turnamen & Prestasi","items":[{"title":"Kejuaraan Daerah","description":"Partisipasi dalam kejuaraan tingkat daerah","icon":"🏆"},{"title":"Pembagian Hadiah","description":"Penghargaan untuk atlet berprestasi","icon":"🥇"}]},{"title":"Komunitas & Event","items":[{"title":"Sparring Match","description":"Pertandingan persahabatan antar anggota","icon":"🤝"},{"title":"Gathering Anggota","description":"Acara kebersamaan para anggota","icon":"🎉"}]}]', 'Image')
+
+            ON CONFLICT (key) DO NOTHING;
+        `);
+
         console.log('Database tables verified/created.');
     } catch (err) {
         console.error('Error initializing database:', err);
@@ -523,11 +588,17 @@ app.get('/api/brackets/:tournamentId/:category', async (req, res) => {
 
         const bracket = bracketResult.rows[0];
 
-        // Get matches for this bracket
-        const matchesResult = await pool.query(
-            'SELECT * FROM bracket_matches WHERE bracket_id = $1 ORDER BY round ASC, position ASC',
-            [bracket.id]
-        );
+        // Get matches for this bracket with player rankings
+        const matchesResult = await pool.query(`
+            SELECT m.*, 
+                   p1.ranking as player1_rank,
+                   p2.ranking as player2_rank
+            FROM bracket_matches m
+            LEFT JOIN tournament_registrations p1 ON m.player1_id = p1.id
+            LEFT JOIN tournament_registrations p2 ON m.player2_id = p2.id
+            WHERE m.bracket_id = $1 
+            ORDER BY m.round ASC, m.position ASC
+        `, [bracket.id]);
 
         res.json({ bracket, matches: matchesResult.rows });
     } catch (err) {
@@ -557,36 +628,93 @@ app.post('/api/brackets/generate', async (req, res) => {
             [tournament_id, category]
         );
 
-        const players = registrations.rows;
+        let players = registrations.rows;
 
         if (players.length < 2) {
             return res.status(400).json({ error: 'Minimal 2 peserta untuk generate bracket' });
         }
 
-        // Shuffle players randomly
-        const shuffledPlayers = [...players].sort(() => Math.random() - 0.5);
+        // 1. Sort players by Ranking (ASC), then Points (DESC)
+        // Values of 0 or null are treated as lowest rank (highest number)
+        players.sort((a, b) => {
+            const rankA = a.ranking && a.ranking > 0 ? a.ranking : 999999;
+            const rankB = b.ranking && b.ranking > 0 ? b.ranking : 999999;
+
+            if (rankA !== rankB) {
+                return rankA - rankB;
+            }
+
+            const pointsA = a.points || 0;
+            const pointsB = b.points || 0;
+            return pointsB - pointsA;
+        });
 
         // Calculate bracket size (next power of 2)
         const bracketSize = Math.pow(2, Math.ceil(Math.log2(players.length)));
         const totalRounds = Math.log2(bracketSize);
+
+        // 2. Generate Seeding Order
+        // Standard seeding pattern: [1, 2] -> [1, 4, 2, 3] -> [1, 8, 4, 5, 2, 7, 3, 6] ...
+        let seedOrder = [1, 2];
+        for (let i = 1; i < totalRounds; i++) {
+            const nextOrder = [];
+            const currentSize = Math.pow(2, i + 1); // 4, 8, 16...
+            for (const val of seedOrder) {
+                nextOrder.push(val);
+                nextOrder.push(currentSize + 1 - val);
+            }
+            seedOrder = nextOrder;
+        }
+
+        // 3. Map Players to Seeds
+        // players[0] is Rank 1. It goes to seedOrder index containing '1'.
+        // Actually, seedOrder is the LIST of seeds in match order.
+        // e.g. [1, 8, 4, 5...] means Match 1 has Seed 1 vs Seed 8.
+        // So we just iterate seedOrder in pairs.
+
+        // Create a map for quick lookup: Rank/Seed N -> Player
+        // Since players are sorted, players[0] is Seed 1, players[1] is Seed 2.
 
         // Create bracket record
         const bracketResult = await pool.query(
             'INSERT INTO tournament_brackets (tournament_id, category, bracket_type, total_rounds, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [tournament_id, category, 'single_elimination', totalRounds, 'active']
         );
-
         const bracket = bracketResult.rows[0];
 
-        // Create first round matches
-        const firstRoundMatches = bracketSize / 2;
+        // 3. Map Players to Seeds and Create Matches
+        // seedOrder is [1, 8, 4, 5, 2, 7, 3, 6...]
+
+        let matchPairs = [];
+        const firstRoundMatchesCount = bracketSize / 2;
+
+        for (let i = 0; i < firstRoundMatchesCount; i++) {
+            const seed1 = seedOrder[i * 2];
+            const seed2 = seedOrder[i * 2 + 1];
+            matchPairs.push({ seed1, seed2 });
+        }
+
+        // Apply "Visual Balance" -> Place Seed 2 pair at the very bottom
+        // Logic: Standard seeding has 1 at top-left, 2 at top-right (if vertical).
+        // Vertical list: 1 at top, 2 at top of bottom block.
+        // To put 2 at bottom, we reverse the order of the bottom block matches.
+        if (matchPairs.length >= 2) {
+            const mid = matchPairs.length / 2;
+            const topHalf = matchPairs.slice(0, mid);
+            const bottomHalf = matchPairs.slice(mid).reverse();
+            matchPairs = [...topHalf, ...bottomHalf];
+        }
+
         const matches = [];
 
-        for (let i = 0; i < firstRoundMatches; i++) {
-            const player1 = shuffledPlayers[i * 2] || null;
-            const player2 = shuffledPlayers[i * 2 + 1] || null;
+        for (let i = 0; i < matchPairs.length; i++) {
+            const { seed1, seed2 } = matchPairs[i];
 
-            // Determine player name based on whether it's doubles or singles
+            // Get actual players (0-indexed array, so Seed N is players[N-1])
+            const player1 = players[seed1 - 1] || null; // If seed > players.length, it's a Bye
+            const player2 = players[seed2 - 1] || null;
+
+            // Determine player name helper
             const getPlayerName = (player) => {
                 if (!player) return null;
                 if (player.partner_name) {
@@ -606,14 +734,18 @@ app.post('/api/brackets/generate', async (req, res) => {
                 status: 'pending'
             };
 
-            // If only one player (bye), auto-advance
+            // Auto-advance logic for Byes
             if (player1 && !player2) {
+                // P1 vs Bye -> P1 wins
                 matchData.winner_id = player1.id;
                 matchData.winner_name = getPlayerName(player1);
                 matchData.status = 'completed';
             } else if (!player1 && player2) {
+                // Bye vs P2 -> P2 wins
                 matchData.winner_id = player2.id;
                 matchData.winner_name = getPlayerName(player2);
+                matchData.status = 'completed';
+            } else if (!player1 && !player2) {
                 matchData.status = 'completed';
             }
 
@@ -869,6 +1001,40 @@ app.post('/api/hero-slides/upload', uploadSlide.single('image'), async (req, res
         res.json({ image_url: imageUrl, filename: req.file.filename });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Content Management API ---
+
+app.get('/api/content', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM content_sections');
+        const contentMap = {};
+        result.rows.forEach(row => {
+            contentMap[row.key] = row;
+        });
+        res.json(contentMap);
+    } catch (err) {
+        console.error('Error fetching content:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.put('/api/content/:key', async (req, res) => {
+    const { key } = req.params;
+    const { title, content } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE content_sections SET title = $1, content = $2, updated_at = NOW() WHERE key = $3 RETURNING *',
+            [title, content, key]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Content not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating content:', err);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 

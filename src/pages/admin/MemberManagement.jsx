@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
-    ArrowLeft, Plus, Search, Edit, Trash2, X,
+    ArrowLeft, Plus, Search, Edit, Trash2, X, FileText,
     Users, Trophy, Home, LogOut, BarChart3, Save, Tag, ClipboardList, GitBranch, UserCog
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -142,6 +142,10 @@ function MemberManagement() {
                     <Link to="/admin/users" className="sidebar-link">
                         <UserCog size={20} />
                         Pengguna
+                    </Link>
+                    <Link to="/admin/content" className="sidebar-link">
+                        <FileText size={20} />
+                        Konten
                     </Link>
                 </nav>
 

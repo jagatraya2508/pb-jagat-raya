@@ -455,7 +455,10 @@ function BracketManagement() {
                                                                 <div className={`match-row ${match.winner_id === match.player1_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player1_id ? 'loser' : ''}`}>
                                                                     <span className="seed-number">{match.position * 2 - 1}</span>
                                                                     <div className="player-info">
-                                                                        <span className="player-name">{match.player1_name || 'Bye'}</span>
+                                                                        <span className="player-name">
+                                                                            {match.player1_name || (parseInt(round) === 1 ? 'Bye' : '-')}
+                                                                            {match.player1_rank > 0 && <span className="player-rank" style={{ fontSize: '11px', color: '#888', marginLeft: '5px' }}>#{match.player1_rank}</span>}
+                                                                        </span>
                                                                     </div>
                                                                     {match.winner_id === match.player1_id && (
                                                                         <span className="winner-dot"></span>
@@ -471,7 +474,10 @@ function BracketManagement() {
                                                                 <div className={`match-row ${match.winner_id === match.player2_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player2_id ? 'loser' : ''}`}>
                                                                     <span className="seed-number">{match.position * 2}</span>
                                                                     <div className="player-info">
-                                                                        <span className="player-name">{match.player2_name || 'Bye'}</span>
+                                                                        <span className="player-name">
+                                                                            {match.player2_name || (parseInt(round) === 1 ? 'Bye' : '-')}
+                                                                            {match.player2_rank > 0 && <span className="player-rank" style={{ fontSize: '11px', color: '#888', marginLeft: '5px' }}>#{match.player2_rank}</span>}
+                                                                        </span>
                                                                     </div>
                                                                     {match.winner_id === match.player2_id && (
                                                                         <span className="winner-dot"></span>

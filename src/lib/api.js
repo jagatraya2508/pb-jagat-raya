@@ -212,5 +212,31 @@ export const api = {
             if (!res.ok) throw new Error('Failed to delete user');
             return await res.json();
         }
+    },
+    content: {
+        list: async () => {
+            const res = await fetch(`${API_URL}/content`);
+            if (!res.ok) throw new Error('Failed to fetch content');
+            return await res.json();
+        },
+        update: async (key, data) => {
+            const res = await fetch(`${API_URL}/content/${key}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to update content');
+            return await res.json();
+        },
+        uploadImage: async (file) => {
+            const formData = new FormData();
+            formData.append('image', file);
+            const res = await fetch(`${API_URL}/upload/gallery`, {
+                method: 'POST',
+                body: formData
+            });
+            if (!res.ok) throw new Error('Failed to upload image');
+            return await res.json();
+        }
     }
 };

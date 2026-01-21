@@ -25,12 +25,23 @@
 }
 
 .gallery-item-placeholder {
-    position: absolute;
-    inset: 0;
+    width: 100%;
+    height: 200px;
+    background: #f0f0f0;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--bg-card) 0%, var(--primary-blue-dark) 100%);
+    font-size: 3rem;
+    overflow: hidden;
+    /* Ensure image doesn't overflow */
+}
+
+.gallery-item-placeholder img {
+    transition: transform 0.3s ease;
+}
+
+.gallery-item:hover .gallery-item-placeholder img {
+    transform: scale(1.1);
 }
 
 .gallery-item-placeholder span {
