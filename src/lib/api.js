@@ -167,6 +167,15 @@ export const api = {
             if (!res.ok) throw new Error('Failed to update match');
             return await res.json();
         },
+        updateLayout: async (updates) => {
+            const res = await fetch(`${API_URL}/brackets/layout`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ updates })
+            });
+            if (!res.ok) throw new Error('Failed to update layout');
+            return await res.json();
+        },
         delete: async (id) => {
             const res = await fetch(`${API_URL}/brackets/${id}`, {
                 method: 'DELETE'

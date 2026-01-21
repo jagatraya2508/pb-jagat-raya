@@ -270,12 +270,14 @@
     border-bottom: 2px solid var(--border-light);
 }
 
+
 .bracket-view.traditional .round-matches {
     display: flex;
     flex-direction: column;
     flex: 1;
     justify-content: space-around;
-    gap: calc(var(--round, 0) * 60px + 20px);
+    --gap-size: calc(var(--round, 0) * 60px + 20px);
+    gap: var(--gap-size);
     padding: calc(var(--round, 0) * 30px) 0;
 }
 
@@ -286,28 +288,42 @@
 }
 
 .match-box {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-light);
-    border-radius: 4px;
-    cursor: pointer;
+    background: white;
+    border: 1px solid #cbd5e1;
+    /* Darker border (slate-300) */
+    border-radius: 6px;
+    cursor: grab;
     overflow: hidden;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    /* Stronger shadow */
+}
+
+.match-box:active {
+    cursor: grabbing;
+}
+
+.match-box.dragging {
+    cursor: grabbing;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    border-color: var(--primary-blue);
+    z-index: 100;
 }
 
 .match-box:hover {
     border-color: var(--primary-blue);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transform: translateY(-1px);
 }
 
 /* Match Row */
 .match-row {
     display: flex;
     align-items: center;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border-light);
-    gap: 8px;
-    min-height: 36px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    gap: 10px;
+    min-height: 40px;
     transition: background 0.2s;
 }
 
@@ -316,29 +332,33 @@
 }
 
 .match-row.winner {
-    background: rgba(16, 185, 129, 0.08);
+    background: #dcfce7;
+    /* Stronger green (green-100) */
 }
 
 .match-row.winner .player-name {
-    font-weight: 600;
-    color: var(--text-primary);
+    font-weight: 700;
+    color: #166534;
+    /* Darker green text */
 }
 
 .match-row.loser {
-    opacity: 0.6;
+    background: #f8fafc;
+    opacity: 0.8;
 }
 
 .match-row.loser .player-name {
     text-decoration: line-through;
-    text-decoration-color: rgba(100, 100, 100, 0.5);
+    text-decoration-color: #94a3b8;
+    color: #64748b;
 }
 
 /* Seed Number */
 .seed-number {
     width: 20px;
     font-size: 11px;
-    font-weight: 500;
-    color: var(--text-muted);
+    font-weight: 600;
+    color: #64748b;
     flex-shrink: 0;
 }
 
@@ -350,8 +370,10 @@
 }
 
 .player-info .player-name {
-    font-size: 13px;
-    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    /* Darker slate */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -365,6 +387,7 @@
     background: #22c55e;
     border-radius: 50%;
     flex-shrink: 0;
+    box-shadow: 0 0 0 2px #dcfce7;
 }
 
 /* Score Display */
@@ -377,15 +400,16 @@
 }
 
 .score-display .score {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
-    min-width: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    min-width: 20px;
     text-align: center;
 }
 
 .match-row.winner .score-display .score {
-    color: #22c55e;
+    color: #15803d;
+    /* Dark green */
 }
 
 /* Match Time */
@@ -393,41 +417,65 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 6px 10px;
-    background: var(--bg-tertiary);
+    padding: 6px 12px;
+    background: #f1f5f9;
     font-size: 11px;
-    color: var(--text-muted);
-    border-top: 1px solid var(--border-light);
+    color: #64748b;
+    border-top: 1px solid #e2e8f0;
+    font-weight: 500;
 }
 
 /* Connector Lines */
 .connector-right {
+    display: none;
+    /* Hidden as requested */
     position: absolute;
     right: 0;
     top: 50%;
     width: 30px;
     height: 2px;
-    background: var(--border-light);
+    background: #94a3b8;
+    /* Stronger connector color */
 }
 
 .connector-right::after {
+    display: none;
+    /* Hidden as requested */
     content: '';
     position: absolute;
     right: 0;
-    top: -50%;
     width: 2px;
-    height: calc(100% + 1px);
-    background: var(--border-light);
-    display: none;
+    background: #94a3b8;
+    /* Stronger connector color */
+    /* Default hidden */
+}
+
+/* Odd matches (Top of pair) - Line goes DOWN */
+.bracket-matchup:nth-child(odd) .connector-right::after {
+    top: 50%;
+    /* Start from center line */
+    height: calc(50% + var(--gap-size) / 2 + 1px);
+    /* Half box height + Half gap */
+}
+
+/* Even matches (Bottom of pair) - Line goes UP */
+.bracket-matchup:nth-child(even) .connector-right::after {
+    bottom: 50%;
+    /* Start from center line */
+    height: calc(50% + var(--gap-size) / 2 + 1px);
+    /* Half box height + Half gap */
 }
 
 .connector-left {
+    display: none;
+    /* Hidden as requested */
     position: absolute;
     left: -30px;
     top: 50%;
     width: 30px;
     height: 2px;
-    background: var(--border-light);
+    background: #94a3b8;
+    /* Stronger connector color */
 }
 
 /* Champion Section */

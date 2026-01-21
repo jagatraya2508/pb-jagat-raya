@@ -856,9 +856,9 @@ app.put('/api/brackets/match/:id', async (req, res) => {
         const updateResult = await pool.query(
             `UPDATE bracket_matches 
              SET player1_score = $1, player2_score = $2, winner_id = $3, winner_name = $4, 
-                 court = $5, match_time = $6, status = $7, updated_at = NOW()
-             WHERE id = $8 RETURNING *`,
-            [player1_score, player2_score, winner_id, winner_name, court || null, match_time || null, status, id]
+                 court = $5, match_time = $6, status = $7, score_detail = $8, updated_at = NOW()
+             WHERE id = $9 RETURNING *`,
+            [player1_score, player2_score, winner_id, winner_name, court || null, match_time || null, status, req.body.score_detail || null, id]
         );
 
         const updatedMatch = updateResult.rows[0];
@@ -893,6 +893,36 @@ app.put('/api/brackets/match/:id', async (req, res) => {
         }
 
         res.json(updatedMatch);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update bracket layout (batch)
+app.put('/api/brackets/layout', async (req, res) => {
+    try {
+        const { updates } = req.body; // Array of { id, offset_x, offset_y }
+        if (!Array.isArray(updates)) {
+            return res.status(400).json({ error: 'Invalid data format' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            for (const update of updates) {
+                await client.query(
+                    'UPDATE bracket_matches SET offset_x = $1, offset_y = $2 WHERE id = $3',
+                    [update.offset_x, update.offset_y, update.id]
+                );
+            }
+            await client.query('COMMIT');
+            res.json({ message: 'Layout updated' });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
