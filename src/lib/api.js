@@ -219,6 +219,11 @@ export const api = {
             if (!res.ok) throw new Error('Failed to fetch content');
             return await res.json();
         },
+        get: async (key) => {
+            const res = await fetch(`${API_URL}/content/${key}`);
+            if (!res.ok) throw new Error('Failed to fetch content');
+            return await res.json();
+        },
         update: async (key, data) => {
             const res = await fetch(`${API_URL}/content/${key}`, {
                 method: 'PUT',

@@ -1,7 +1,31 @@
+import { useState, useEffect } from 'react'
 import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react'
+import { api } from '../lib/api'
 import './ContactSection.css'
 
 function ContactSection() {
+    const [contactInfo, setContactInfo] = useState({
+        address: "GOR Bulutangkis JAGAT RAYA\nJl. Olahraga No. 123\nJakarta, Indonesia",
+        phone: "+62 812 3456 7890",
+        email: "info@pbjagat-raya.com",
+        hours: "Senin - Jumat: 16:00 - 21:00\nSabtu - Minggu: 08:00 - 12:00"
+    })
+
+    useEffect(() => {
+        const fetchContact = async () => {
+            try {
+                const data = await api.content.get('contact')
+                if (data && data.content) {
+                    const content = typeof data.content === 'string' ? JSON.parse(data.content) : data.content
+                    setContactInfo(prev => ({ ...prev, ...content }))
+                }
+            } catch (err) {
+                console.error('Failed to load contact info', err)
+            }
+        }
+        fetchContact()
+    }, [])
+
     const handleSubmit = (e) => {
         e.preventDefault()
         // Handle form submission
@@ -28,7 +52,7 @@ function ContactSection() {
                                     </div>
                                     <div className="contact-item-details">
                                         <h4>Alamat</h4>
-                                        <p>GOR Bulutangkis JAGAT RAYA<br />Jl. Olahraga No. 123<br />Jakarta, Indonesia</p>
+                                        <p style={{ whiteSpace: 'pre-line' }}>{contactInfo.address}</p>
                                     </div>
                                 </div>
 
@@ -38,7 +62,7 @@ function ContactSection() {
                                     </div>
                                     <div className="contact-item-details">
                                         <h4>Telepon</h4>
-                                        <p>+62 812 3456 7890</p>
+                                        <p>{contactInfo.phone}</p>
                                     </div>
                                 </div>
 
@@ -48,7 +72,7 @@ function ContactSection() {
                                     </div>
                                     <div className="contact-item-details">
                                         <h4>Email</h4>
-                                        <p>info@pbjagat-raya.com</p>
+                                        <p>{contactInfo.email}</p>
                                     </div>
                                 </div>
 
@@ -58,7 +82,7 @@ function ContactSection() {
                                     </div>
                                     <div className="contact-item-details">
                                         <h4>Jam Operasional</h4>
-                                        <p>Senin - Jumat: 16:00 - 21:00<br />Sabtu - Minggu: 08:00 - 12:00</p>
+                                        <p style={{ whiteSpace: 'pre-line' }}>{contactInfo.hours}</p>
                                     </div>
                                 </div>
                             </div>

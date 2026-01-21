@@ -1020,6 +1020,20 @@ app.get('/api/content', async (req, res) => {
     }
 });
 
+app.get('/api/content/:key', async (req, res) => {
+    const { key } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM content_sections WHERE key = $1', [key]);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Content not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error fetching content:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.put('/api/content/:key', async (req, res) => {
     const { key } = req.params;
     const { title, content } = req.body;
