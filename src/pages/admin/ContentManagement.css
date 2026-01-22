@@ -1,9 +1,13 @@
+/* ... existing styles ... */
+
 .content-management {
     padding: 2rem;
-    max-width: 800px;
+    max-width: 1000px;
+    /* Increased for gallery grid */
     margin: 0 auto;
 }
 
+/* ... headers ... */
 .page-header {
     margin-bottom: 2rem;
 }
@@ -18,6 +22,35 @@
     color: var(--text-secondary);
 }
 
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
+}
+
+/* Content Card */
 .content-card {
     background: var(--bg-primary);
     border-radius: var(--radius-lg);
@@ -38,7 +71,9 @@
     color: var(--text-primary);
 }
 
-.content-management form {
+/* Forms */
+.content-management form,
+.upload-form {
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -64,6 +99,8 @@
     font-size: 0.95rem;
     transition: border-color 0.2s;
     font-family: inherit;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 .form-input:focus {
@@ -73,9 +110,10 @@
 }
 
 .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    /* Changed to flex for better responsiveness */
     gap: 1.5rem;
+    flex-wrap: wrap;
 }
 
 .form-hint {
@@ -89,6 +127,7 @@
     justify-content: flex-end;
 }
 
+/* Alerts */
 .alert {
     margin: 1.5rem 1.5rem 0;
     padding: 1rem;
@@ -109,4 +148,43 @@
     background: rgba(239, 68, 68, 0.1);
     color: #dc2626;
     border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Gallery Styles */
+.gallery-section {
+    padding-bottom: 2rem;
+}
+
+.gallery-grid {
+    padding: 0 1.5rem;
+}
+
+.gallery-grid h3 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.gallery-item-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    background: var(--bg-primary);
+}
+
+.gallery-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.item-details {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-light);
+}
+
+.empty-text {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px dashed var(--border-light);
 }

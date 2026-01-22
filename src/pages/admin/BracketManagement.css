@@ -289,14 +289,12 @@
 
 .match-box {
     background: white;
-    border: 1px solid #cbd5e1;
-    /* Darker border (slate-300) */
-    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
     cursor: grab;
     overflow: hidden;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    /* Stronger shadow */
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .match-box:active {
@@ -305,26 +303,48 @@
 
 .match-box.dragging {
     cursor: grabbing;
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     border-color: var(--primary-blue);
     z-index: 100;
 }
 
 .match-box:hover {
     border-color: var(--primary-blue);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
 }
 
 /* Match Row */
 .match-row {
     display: flex;
     align-items: center;
-    padding: 10px 12px;
-    border-bottom: 1px solid #e2e8f0;
-    gap: 10px;
-    min-height: 40px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 12px;
+    min-height: 44px;
     transition: background 0.2s;
+}
+
+.swapping-selected {
+    background: #fffbeb !important;
+    /* amber-50 */
+    border: 2px dashed #f59e0b;
+    /* amber-500 */
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    }
 }
 
 .match-row:last-of-type {
@@ -332,14 +352,14 @@
 }
 
 .match-row.winner {
-    background: #dcfce7;
-    /* Stronger green (green-100) */
+    background: #ecfdf5;
+    /* emerald-50 */
 }
 
 .match-row.winner .player-name {
-    font-weight: 700;
-    color: #166534;
-    /* Darker green text */
+    font-weight: 600;
+    color: #065f46;
+    /* emerald-800 */
 }
 
 .match-row.loser {
@@ -427,55 +447,44 @@
 
 /* Connector Lines */
 .connector-right {
-    display: none;
-    /* Hidden as requested */
+    display: block;
     position: absolute;
     right: 0;
     top: 50%;
-    width: 30px;
-    height: 2px;
-    background: #94a3b8;
-    /* Stronger connector color */
+    width: 20px;
+    height: 1px;
+    background: #cbd5e1;
 }
 
 .connector-right::after {
-    display: none;
-    /* Hidden as requested */
+    display: block;
     content: '';
     position: absolute;
     right: 0;
-    width: 2px;
-    background: #94a3b8;
-    /* Stronger connector color */
-    /* Default hidden */
+    width: 1px;
+    background: #cbd5e1;
 }
 
 /* Odd matches (Top of pair) - Line goes DOWN */
 .bracket-matchup:nth-child(odd) .connector-right::after {
     top: 50%;
-    /* Start from center line */
     height: calc(50% + var(--gap-size) / 2 + 1px);
-    /* Half box height + Half gap */
 }
 
 /* Even matches (Bottom of pair) - Line goes UP */
 .bracket-matchup:nth-child(even) .connector-right::after {
     bottom: 50%;
-    /* Start from center line */
     height: calc(50% + var(--gap-size) / 2 + 1px);
-    /* Half box height + Half gap */
 }
 
 .connector-left {
-    display: none;
-    /* Hidden as requested */
+    display: block;
     position: absolute;
-    left: -30px;
+    left: -20px;
     top: 50%;
-    width: 30px;
-    height: 2px;
-    background: #94a3b8;
-    /* Stronger connector color */
+    width: 20px;
+    height: 1px;
+    background: #cbd5e1;
 }
 
 /* Champion Section */

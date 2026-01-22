@@ -176,6 +176,15 @@ export const api = {
             if (!res.ok) throw new Error('Failed to update layout');
             return await res.json();
         },
+        swapPlayers: async (data) => {
+            const res = await fetch(`${API_URL}/brackets/swap-players`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to swap players');
+            return await res.json();
+        },
         delete: async (id) => {
             const res = await fetch(`${API_URL}/brackets/${id}`, {
                 method: 'DELETE'
@@ -241,15 +250,50 @@ export const api = {
             });
             if (!res.ok) throw new Error('Failed to update content');
             return await res.json();
+        }
+    },
+    gallery: {
+        list: async () => {
+            const res = await fetch(`${API_URL}/gallery`);
+            if (!res.ok) throw new Error('Failed to fetch gallery');
+            return await res.json();
         },
-        uploadImage: async (file) => {
+        upload: async (file) => {
             const formData = new FormData();
             formData.append('image', file);
-            const res = await fetch(`${API_URL}/upload/gallery`, {
+            const res = await fetch(`${API_URL}/gallery/upload`, {
                 method: 'POST',
                 body: formData
             });
-            if (!res.ok) throw new Error('Failed to upload image');
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.error || 'Failed to upload image');
+            }
+            return await res.json();
+        },
+        create: async (data) => {
+            const res = await fetch(`${API_URL}/gallery`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to create gallery item');
+            return await res.json();
+        },
+        update: async (id, data) => {
+            const res = await fetch(`${API_URL}/gallery/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (!res.ok) throw new Error('Failed to update gallery item');
+            return await res.json();
+        },
+        delete: async (id) => {
+            const res = await fetch(`${API_URL}/gallery/${id}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error('Failed to delete gallery item');
             return await res.json();
         }
     }

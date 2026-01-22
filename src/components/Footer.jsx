@@ -1,9 +1,36 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Phone, Mail, Facebook, Instagram, Youtube } from 'lucide-react'
+import { api } from '../lib/api'
 import './Footer.css'
 
 function Footer() {
     const currentYear = new Date().getFullYear()
+    const [contactInfo, setContactInfo] = useState({
+        address: "GOR Bulutangkis, Jl. Olahraga No. 123, Jakarta",
+        phone: "+62 812 3456 7890",
+        email: "info@pbjagat-raya.com"
+    })
+
+    useEffect(() => {
+        const fetchContact = async () => {
+            try {
+                const data = await api.content.get('contact')
+                if (data && data.content) {
+                    const content = typeof data.content === 'string' ? JSON.parse(data.content) : data.content
+                    setContactInfo(prev => ({
+                        ...prev,
+                        address: content.address || prev.address,
+                        phone: content.phone || prev.phone,
+                        email: content.email || prev.email
+                    }))
+                }
+            } catch (err) {
+                console.error('Failed to load footer contact info', err)
+            }
+        }
+        fetchContact()
+    }, [])
 
     return (
         <footer className="footer">
@@ -58,15 +85,15 @@ function Footer() {
                         <ul className="footer-contact">
                             <li>
                                 <MapPin size={16} />
-                                <span>GOR Bulutangkis, Jl. Olahraga No. 123, Jakarta</span>
+                                <span>{contactInfo.address}</span>
                             </li>
                             <li>
                                 <Phone size={16} />
-                                <span>+62 812 3456 7890</span>
+                                <span>{contactInfo.phone}</span>
                             </li>
                             <li>
                                 <Mail size={16} />
-                                <span>info@pbjagat-raya.com</span>
+                                <span>{contactInfo.email}</span>
                             </li>
                         </ul>
                     </div>

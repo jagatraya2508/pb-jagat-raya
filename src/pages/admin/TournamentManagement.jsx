@@ -7,10 +7,23 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
 import './MemberManagement.css'
+import AdminSidebar from '../../components/AdminSidebar'
 
 function TournamentManagement() {
-    const { signOut } = useAuth()
+    const { } = useAuth()
+    // ...
+    // Note: Since signOut is unused after removing sidebar, removing it is correct.
+    // However, destructuring empty object {} might trigger linter.
+    // Actually, useAuth still returns other things, but here only signOut was used.
+    // I should check if user is used? No.
+    // So I can just call useAuth() or ignore it if I don't need auth state.
+    // But wait, removing `signOut` usage in sidebar is what I am doing essentially.
+
+    // Let's look at line 12: `const { signOut } = useAuth()`
+    // I will replace lines 1-12 to add import and update hook.
+
     const [tournaments, setTournaments] = useState([])
+
     const [registrations, setRegistrations] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
@@ -169,55 +182,8 @@ function TournamentManagement() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="sidebar-header">
-                    <div className="sidebar-logo">
-                        <img src="/logo.png" alt="Logo" style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
-                    </div>
-                </div>
-
-                <nav className="sidebar-nav">
-                    <Link to="/admin" className="sidebar-link">
-                        <BarChart3 size={20} />
-                        Dashboard
-                    </Link>
-                    <Link to="/admin/members" className="sidebar-link">
-                        <Users size={20} />
-                        Anggota
-                    </Link>
-                    <Link to="/admin/categories" className="sidebar-link">
-                        <Tag size={20} />
-                        Kategori
-                    </Link>
-                    <Link to="/admin/tournaments" className="sidebar-link active">
-                        <Trophy size={20} />
-                        Kejuaraan
-                    </Link>
-                    <Link to="/admin/registrations" className="sidebar-link">
-                        <ClipboardList size={20} />
-                        Pendaftar
-                    </Link>
-                    <Link to="/admin/brackets" className="sidebar-link">
-                        <GitBranch size={20} />
-                        Bagan
-                    </Link>
-                    <Link to="/admin/users" className="sidebar-link">
-                        <UserCog size={20} />
-                        Pengguna
-                    </Link>
-                </nav>
-
-                <div className="sidebar-footer">
-                    <Link to="/" className="sidebar-link">
-                        <Home size={20} />
-                        Ke Website
-                    </Link>
-                    <button onClick={signOut} className="sidebar-link sidebar-logout">
-                        <LogOut size={20} />
-                        Logout
-                    </button>
-                </div>
-            </aside>
+            {/* Sidebar */}
+            <AdminSidebar />
 
             <main className="admin-main">
                 <header className="admin-header">

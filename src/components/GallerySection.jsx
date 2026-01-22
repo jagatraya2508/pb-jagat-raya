@@ -4,93 +4,88 @@ import { api } from '../lib/api'
 import './GallerySection.css'
 
 function GallerySection() {
+    const [galleryItems, setGalleryItems] = useState([])
     const [selectedImage, setSelectedImage] = useState(null)
-    const [content, setContent] = useState(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchContent = async () => {
+        const fetchGallery = async () => {
             try {
-                const data = await api.content.list()
-                setContent(data)
+                const items = await api.gallery.list()
+                setGalleryItems(Array.isArray(items) ? items : [])
             } catch (error) {
-                console.error('Error fetching gallery content:', error)
+                console.error('Error fetching gallery:', error)
             } finally {
                 setLoading(false)
             }
         }
-        fetchContent()
+        fetchGallery()
     }, [])
 
-    const getValue = (key, field, fallback) => {
-        if (!content || !content[key] || !content[key][field]) return fallback
-        return content[key][field]
+    const getGroupedItems = () => {
+        const groups = {};
+        galleryItems.forEach(item => {
+            const category = item.category || 'Umum';
+            if (!groups[category]) {
+                groups[category] = [];
+            }
+            groups[category].push(item);
+        });
+        return Object.entries(groups).map(([title, items]) => ({ title, items }));
     }
 
-    const getGroups = () => {
-        const raw = getValue('gallery_groups', 'content', '[]')
-        try {
-            return JSON.parse(raw)
-        } catch (e) {
-            console.error('Error parsing gallery JSON:', e)
-            return []
-        }
-    }
-
-    const groups = getGroups()
+    const groupedGallery = getGroupedItems();
 
     if (loading) return null
 
     return (
         <section id="galeri" className="gallery section">
             <div className="container">
-                <h2 className="section-title">{getValue('gallery_main', 'title', 'Galeri Kegiatan')}</h2>
+                <h2 className="section-title">Galeri Kegiatan</h2>
                 <p className="section-subtitle">
-                    {getValue('gallery_main', 'content', 'Dokumentasi berbagai kegiatan dan momen berharga PB. JAGAT RAYA')}
+                    Dokumentasi berbagai kegiatan dan momen berharga PB. JAGAT RAYA
                 </p>
 
                 <div className="gallery-groups-container">
-                    {groups.map((group, groupIndex) => (
-                        <div key={groupIndex} className="gallery-group">
-                            <h3 className="gallery-group-title" style={{
-                                marginTop: groupIndex === 0 ? '0' : '3rem',
-                                marginBottom: '1.5rem',
-                                color: 'var(--primary-color)',
-                                borderLeft: '4px solid var(--accent-yellow)',
-                                paddingLeft: '1rem'
-                            }}>
-                                {group.title}
-                            </h3>
-                            <div className="gallery-grid">
-                                {group.items.map((image, index) => (
-                                    <div
-                                        key={index}
-                                        className="gallery-item"
-                                        onClick={() => setSelectedImage(image)}
-                                    >
-                                        <div className="gallery-item-placeholder">
-                                            {(image.icon && (image.icon.startsWith('http') || image.icon.startsWith('/'))) ? (
+                    {galleryItems.length === 0 ? (
+                        <p className="text-center" style={{ width: '100%' }}>Belum ada foto di galeri.</p>
+                    ) : (
+                        groupedGallery.map((group, groupIndex) => (
+                            <div key={groupIndex} className="gallery-group" style={{ marginBottom: '4rem' }}>
+                                <h3 className="gallery-group-title" style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: '700',
+                                    color: 'var(--primary-color)',
+                                    marginBottom: '1.5rem',
+                                    paddingLeft: '1rem',
+                                    borderLeft: '4px solid var(--accent-yellow)',
+                                    textTransform: 'capitalize'
+                                }}>
+                                    {group.title}
+                                </h3>
+                                <div className="gallery-grid">
+                                    {group.items.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="gallery-item"
+                                            onClick={() => setSelectedImage(item)}
+                                        >
+                                            <div className="gallery-item-placeholder">
                                                 <img
-                                                    src={image.icon}
-                                                    alt={image.title}
+                                                    src={item.image_url}
+                                                    alt={item.caption || 'Galeri'}
                                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                 />
-                                            ) : (
-                                                <span>{image.icon || image.placeholder || '📷'}</span>
-                                            )}
+                                            </div>
+                                            <div className="gallery-item-overlay">
+                                                <h4>{item.category}</h4>
+                                                <p>{item.caption}</p>
+                                            </div>
                                         </div>
-                                        <div className="gallery-item-overlay">
-                                            <h4>{image.title}</h4>
-                                            <p>{image.description}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-
-                    {groups.length === 0 && (
-                        <p className="text-center">Belum ada data galeri.</p>
+                        ))
                     )}
                 </div>
 
@@ -105,19 +100,15 @@ function GallerySection() {
                                 <X size={24} />
                             </button>
                             <div className="gallery-modal-image">
-                                {(selectedImage.icon && (selectedImage.icon.startsWith('http') || selectedImage.icon.startsWith('/'))) ? (
-                                    <img
-                                        src={selectedImage.icon}
-                                        alt={selectedImage.title}
-                                        style={{ width: '100%', height: 'auto', maxHeight: '70vh', objectFit: 'contain' }}
-                                    />
-                                ) : (
-                                    <span className="gallery-modal-placeholder">{selectedImage.icon || selectedImage.placeholder || '📷'}</span>
-                                )}
+                                <img
+                                    src={selectedImage.image_url}
+                                    alt={selectedImage.caption}
+                                    style={{ width: '100%', height: 'auto', maxHeight: '70vh', objectFit: 'contain' }}
+                                />
                             </div>
                             <div className="gallery-modal-info">
-                                <h3>{selectedImage.title}</h3>
-                                <p>{selectedImage.description}</p>
+                                <h3>{selectedImage.category}</h3>
+                                <p>{selectedImage.caption}</p>
                             </div>
                         </div>
                     </div>

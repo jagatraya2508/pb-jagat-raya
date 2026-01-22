@@ -6,14 +6,11 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import './AdminDashboard.css'
 
-function AdminDashboard() {
-    const { user, signOut } = useAuth()
-    const navigate = useNavigate()
+import AdminSidebar from '../../components/AdminSidebar'
 
-    const handleLogout = async () => {
-        await signOut()
-        navigate('/')
-    }
+function AdminDashboard() {
+    const { user } = useAuth()
+    const navigate = useNavigate()
 
     const stats = [
         { label: 'Total Anggota', value: '0', icon: Users, color: 'blue' },
@@ -55,60 +52,7 @@ function AdminDashboard() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="sidebar-header">
-                    <div className="sidebar-logo">
-                        <img src="/logo.png" alt="Logo" style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
-                    </div>
-                </div>
-
-                <nav className="sidebar-nav">
-                    <Link to="/admin" className="sidebar-link active">
-                        <BarChart3 size={20} />
-                        Dashboard
-                    </Link>
-                    <Link to="/admin/members" className="sidebar-link">
-                        <Users size={20} />
-                        Anggota
-                    </Link>
-                    <Link to="/admin/categories" className="sidebar-link">
-                        <Tag size={20} />
-                        Kategori
-                    </Link>
-                    <Link to="/admin/tournaments" className="sidebar-link">
-                        <Trophy size={20} />
-                        Kejuaraan
-                    </Link>
-                    <Link to="/admin/registrations" className="sidebar-link">
-                        <ClipboardList size={20} />
-                        Pendaftar
-                    </Link>
-                    <Link to="/admin/brackets" className="sidebar-link">
-                        <Calendar size={20} />
-                        Bagan
-                    </Link>
-                    <Link to="/admin/users" className="sidebar-link">
-                        <UserCog size={20} />
-                        Pengguna
-                    </Link>
-                    <Link to="/admin/slides" className="sidebar-link">
-                        <Image size={20} />
-                        Kelola Slide
-                    </Link>
-                    <Link to="/admin/content" className="sidebar-link">
-                        <FileText size={20} />
-                        Konten
-                    </Link>
-                </nav>
-
-                <div className="sidebar-footer">
-
-                    <button onClick={handleLogout} className="sidebar-link sidebar-logout">
-                        <LogOut size={20} />
-                        Logout
-                    </button>
-                </div>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <header className="admin-header">

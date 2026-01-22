@@ -7,9 +7,10 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../lib/api'
 import './BracketManagement.css'
+import AdminSidebar from '../../components/AdminSidebar'
 
 function BracketManagement() {
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
     const [tournaments, setTournaments] = useState([])
     const [selectedTournament, setSelectedTournament] = useState(null)
     const [brackets, setBrackets] = useState([])
@@ -22,6 +23,9 @@ function BracketManagement() {
     const [matchScores, setMatchScores] = useState({ player1_score: '', player2_score: '' })
     const [registrationCounts, setRegistrationCounts] = useState({})
     const [isAdmin, setIsAdmin] = useState(false)
+
+    // ... rest of logic ...
+
 
     useEffect(() => {
         checkAdminStatus()
@@ -188,13 +192,11 @@ function BracketManagement() {
         }
 
         // Check winner requirement (min 2 sets)
-        const maxWins = Math.max(p1Wins, p2Wins)
-        if (maxWins < 2) {
-            // Allow saving incomplete match? User said "score minimal 2".
-            // Assuming strict validation as before.
-            alert('Pemenang harus memenangkan 2 set!')
-            return
-        }
+        // const maxWins = Math.max(p1Wins, p2Wins)
+        // if (maxWins < 2) {
+        //     alert('Pemenang harus memenangkan 2 set!')
+        //     return
+        // }
 
         const scoreDetailString = detailScores.join(', ')
 
@@ -259,6 +261,52 @@ function BracketManagement() {
     const [draggingMatchId, setDraggingMatchId] = useState(null)
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
     const [initialDragOffset, setInitialDragOffset] = useState({ x: 0, y: 0 })
+
+    // Swap functionality state
+    const [swappingPlayer, setSwappingPlayer] = useState(null)
+
+    const handlePlayerClick = async (e, matchId, slot, playerName) => {
+        // Only allow swapping for admin
+        if (!isAdmin) return;
+
+        e.stopPropagation(); // Prevent drag or modal opening
+
+        if (!swappingPlayer) {
+            // Select player to swap
+            setSwappingPlayer({ matchId, slot, playerName });
+            return;
+        }
+
+        // If clicking same slot, deselect
+        if (swappingPlayer.matchId === matchId && swappingPlayer.slot === slot) {
+            setSwappingPlayer(null);
+            return;
+        }
+
+        // Perform swap
+        if (window.confirm(`Swap ${swappingPlayer.playerName || 'Empty'} with ${playerName || 'Empty'}?`)) {
+            try {
+                const updatedMatches = await api.brackets.swapPlayers({
+                    match1_id: swappingPlayer.matchId,
+                    player1_slot: swappingPlayer.slot,
+                    match2_id: matchId,
+                    player2_slot: slot
+                });
+
+                // Update local matches state
+                setMatches(prev => prev.map(m => {
+                    const updated = updatedMatches.find(u => u.id === m.id);
+                    return updated || m;
+                }));
+
+                setSwappingPlayer(null);
+            } catch (error) {
+                alert('Gagal menukar pemain: ' + error.message);
+            }
+        } else {
+            setSwappingPlayer(null);
+        }
+    }
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -361,53 +409,8 @@ function BracketManagement() {
     return (
         <div className="admin-layout">
             {/* Sidebar */}
-            <aside className="admin-sidebar">
-                <div className="sidebar-header">
-                    <div className="sidebar-logo">
-                        <img src="/logo.png" alt="Logo" style={{ width: '120px', height: 'auto', objectFit: 'contain' }} />
-                    </div>
-                </div>
-                <nav className="sidebar-nav">
-                    <Link to="/admin" className="sidebar-link">
-                        <BarChart3 size={20} />
-                        Dashboard
-                    </Link>
-                    <Link to="/admin/members" className="sidebar-link">
-                        <Users size={20} />
-                        Anggota
-                    </Link>
-                    <Link to="/admin/categories" className="sidebar-link">
-                        <Tag size={20} />
-                        Kategori
-                    </Link>
-                    <Link to="/admin/tournaments" className="sidebar-link">
-                        <Trophy size={20} />
-                        Kejuaraan
-                    </Link>
-                    <Link to="/admin/registrations" className="sidebar-link">
-                        <ClipboardList size={20} />
-                        Pendaftar
-                    </Link>
-                    <Link to="/admin/brackets" className="sidebar-link active">
-                        <GitBranch size={20} />
-                        Bagan
-                    </Link>
-                    <Link to="/admin/users" className="sidebar-link">
-                        <UserCog size={20} />
-                        Pengguna
-                    </Link>
-                </nav>
-                <div className="sidebar-footer">
-                    <Link to="/" className="sidebar-link">
-                        <Home size={20} />
-                        Ke Website
-                    </Link>
-                    <button onClick={logout} className="sidebar-link sidebar-logout">
-                        <LogOut size={20} />
-                        Logout
-                    </button>
-                </div>
-            </aside>
+            {/* Sidebar */}
+            <AdminSidebar />
 
             {/* Main Content */}
             <main className="admin-main">
@@ -660,7 +663,11 @@ function BracketManagement() {
                                                                     title="Tahan klik untuk menggeser posisi, Klik lepas untuk edit skor"
                                                                 >
                                                                     {/* Player 1 */}
-                                                                    <div className={`match-row ${match.winner_id === match.player1_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player1_id ? 'loser' : ''}`}>
+                                                                    <div
+                                                                        className={`match-row ${match.winner_id === match.player1_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player1_id ? 'loser' : ''} ${swappingPlayer?.matchId === match.id && swappingPlayer?.slot === 'player1' ? 'swapping-selected' : ''}`}
+                                                                        onClick={(e) => handlePlayerClick(e, match.id, 'player1', match.player1_name)}
+                                                                        style={{ cursor: isAdmin ? 'pointer' : 'default' }}
+                                                                    >
                                                                         <span className="seed-number">{match.player1_id ? `#${index * 2 + 1}` : '-'}</span>
                                                                         <div className="player-info">
                                                                             <span className="player-name">
@@ -684,7 +691,11 @@ function BracketManagement() {
                                                                     </div>
 
                                                                     {/* Player 2 */}
-                                                                    <div className={`match-row ${match.winner_id === match.player2_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player2_id ? 'loser' : ''}`}>
+                                                                    <div
+                                                                        className={`match-row ${match.winner_id === match.player2_id ? 'winner' : ''} ${match.winner_id && match.winner_id !== match.player2_id ? 'loser' : ''} ${swappingPlayer?.matchId === match.id && swappingPlayer?.slot === 'player2' ? 'swapping-selected' : ''}`}
+                                                                        onClick={(e) => handlePlayerClick(e, match.id, 'player2', match.player2_name)}
+                                                                        style={{ cursor: isAdmin ? 'pointer' : 'default' }}
+                                                                    >
                                                                         <span className="seed-number">{match.player2_id ? `#${index * 2 + 2}` : '-'}</span>
                                                                         <div className="player-info">
                                                                             <span className="player-name">

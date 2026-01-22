@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, MapPin, Users } from 'lucide-react'
+import { Calendar, Clock, MapPin, Users, Trophy, Medal, Star, Target, Dumbbell, Activity, Zap, Award } from 'lucide-react'
 import { api } from '../lib/api'
 import './ActivitiesSection.css'
 
@@ -28,7 +28,7 @@ function ActivitiesSection() {
 
     // Helper to get Icon component from string name
     const getIcon = (iconName) => {
-        const icons = { Calendar, Clock, MapPin, Users }
+        const icons = { Calendar, Clock, MapPin, Users, Trophy, Medal, Star, Target, Dumbbell, Activity, Zap, Award }
         return icons[iconName] || Calendar
     }
 

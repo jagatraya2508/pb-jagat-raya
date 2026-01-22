@@ -792,6 +792,7 @@ app.post('/api/brackets/generate', async (req, res) => {
 });
 
 // Helper function to process auto-advances from byes
+// Helper function to process auto-advances from byes
 async function processAutoAdvances(bracketId, totalRounds) {
     for (let round = 1; round < totalRounds; round++) {
         const completedMatches = await pool.query(
@@ -802,24 +803,114 @@ async function processAutoAdvances(bracketId, totalRounds) {
         );
 
         for (const match of completedMatches.rows) {
+            // Determine next match position
             const nextRound = round + 1;
             const nextPosition = Math.ceil(match.position / 2);
-            const isPlayer1 = match.position % 2 === 1;
+            const isPlayer1Position = (match.position % 2 !== 0); // Odd position goes to Player 1 slot
 
-            // Update next round match
-            const updateField = isPlayer1 ?
-                { id: 'player1_id', name: 'player1_name' } :
-                { id: 'player2_id', name: 'player2_name' };
-
-            await pool.query(
-                `UPDATE bracket_matches 
-                 SET ${updateField.id} = $1, ${updateField.name} = $2, updated_at = NOW()
-                 WHERE bracket_id = $3 AND round = $4 AND position = $5`,
-                [match.winner_id, match.winner_name, bracketId, nextRound, nextPosition]
+            // Find next match
+            const nextMatchResult = await pool.query(
+                'SELECT * FROM bracket_matches WHERE bracket_id = $1 AND round = $2 AND position = $3',
+                [bracketId, nextRound, nextPosition]
             );
+
+            if (nextMatchResult.rows.length > 0) {
+                const nextMatch = nextMatchResult.rows[0];
+                const updateField = isPlayer1Position ? 'player1' : 'player2';
+
+                await pool.query(
+                    `UPDATE bracket_matches 
+                     SET ${updateField}_id = $1, ${updateField}_name = $2 
+                     WHERE id = $3`,
+                    [match.winner_id, match.winner_name, nextMatch.id]
+                );
+            }
         }
     }
 }
+
+// Swap Players Endpoint
+app.post('/api/brackets/swap-players', async (req, res) => {
+    try {
+        const { match1_id, player1_slot, match2_id, player2_slot } = req.body;
+
+        // Fetch both matches
+        const matchesResult = await pool.query(
+            'SELECT * FROM bracket_matches WHERE id IN ($1, $2)',
+            [match1_id, match2_id]
+        );
+
+        if (matchesResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Matches not found' });
+        }
+
+        const match1 = matchesResult.rows.find(m => m.id === match1_id);
+        const match2 = matchesResult.rows.find(m => m.id === match2_id);
+
+        if (!match1 || !match2) {
+            return res.status(404).json({ error: 'One or both matches not found' });
+        }
+
+        // Helper to get player data from a slot
+        const getPlayerData = (match, slot) => {
+            if (slot === 'player1') {
+                return {
+                    id: match.player1_id,
+                    name: match.player1_name
+                };
+            } else {
+                return {
+                    id: match.player2_id,
+                    name: match.player2_name
+                };
+            }
+        };
+
+        const player1Data = getPlayerData(match1, player1_slot);
+        const player2Data = getPlayerData(match2, player2_slot);
+
+        const client = await pool.connect();
+
+        try {
+            await client.query('BEGIN');
+
+            // Update Match 1 with Player 2's data
+            await client.query(
+                `UPDATE bracket_matches 
+                 SET ${player1_slot}_id = $1, ${player1_slot}_name = $2 
+                 WHERE id = $3`,
+                [player2Data.id, player2Data.name, match1_id]
+            );
+
+            // Update Match 2 with Player 1's data
+            await client.query(
+                `UPDATE bracket_matches 
+                 SET ${player2_slot}_id = $1, ${player2_slot}_name = $2 
+                 WHERE id = $3`,
+                [player1Data.id, player1Data.name, match2_id]
+            );
+
+            await client.query('COMMIT');
+
+            // Return updated matches
+            const updatedMatches = await pool.query(
+                'SELECT * FROM bracket_matches WHERE id IN ($1, $2)',
+                [match1_id, match2_id]
+            );
+
+            res.json(updatedMatches.rows);
+        } catch (e) {
+            await client.query('ROLLBACK');
+            throw e;
+        } finally {
+            client.release();
+        }
+
+    } catch (err) {
+        console.error('Error swapping players:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Update match result
 app.put('/api/brackets/match/:id', async (req, res) => {
@@ -838,17 +929,18 @@ app.put('/api/brackets/match/:id', async (req, res) => {
         // Determine winner
         let winner_id = null;
         let winner_name = null;
-        let status = 'playing';
-
         if (player1_score !== null && player2_score !== null) {
-            if (player1_score > player2_score) {
-                winner_id = match.player1_id;
-                winner_name = match.player1_name;
-                status = 'completed';
-            } else if (player2_score > player1_score) {
-                winner_id = match.player2_id;
-                winner_name = match.player2_name;
-                status = 'completed';
+            // Only finish match if someone has won at least 2 sets
+            if (Math.max(player1_score, player2_score) >= 2) {
+                if (player1_score > player2_score) {
+                    winner_id = match.player1_id;
+                    winner_name = match.player1_name;
+                    status = 'completed';
+                } else if (player2_score > player1_score) {
+                    winner_id = match.player2_id;
+                    winner_name = match.player2_name;
+                    status = 'completed';
+                }
             }
         }
 
@@ -1066,19 +1158,109 @@ app.get('/api/content/:key', async (req, res) => {
 
 app.put('/api/content/:key', async (req, res) => {
     const { key } = req.params;
-    const { title, content } = req.body;
+    const { title, content, icon } = req.body;
     try {
+        // Using UPSERT (Insert on conflict update)
         const result = await pool.query(
-            'UPDATE content_sections SET title = $1, content = $2, updated_at = NOW() WHERE key = $3 RETURNING *',
-            [title, content, key]
+            `INSERT INTO content_sections (key, title, content, icon, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, NOW(), NOW())
+             ON CONFLICT (key) 
+             DO UPDATE SET 
+                title = EXCLUDED.title, 
+                content = EXCLUDED.content, 
+                icon = EXCLUDED.icon,
+                updated_at = NOW()
+             RETURNING *`,
+            [key, title, content, icon] // icon can be null/undefined
         );
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Content not found' });
-        }
+
         res.json(result.rows[0]);
     } catch (err) {
         console.error('Error updating content:', err);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// --- Gallery API ---
+
+app.get('/api/gallery', async (req, res) => {
+    try {
+        const { rows } = await pool.query('SELECT * FROM gallery_items ORDER BY created_at DESC');
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/gallery/upload', (req, res) => {
+    uploadGallery.single('image')(req, res, async (err) => {
+        if (err) {
+            console.error('Multer upload error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+            const imageUrl = `http://localhost:${PORT}/uploads/gallery/${req.file.filename}`;
+            res.json({ image_url: imageUrl, filename: req.file.filename });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+});
+
+app.post('/api/gallery', async (req, res) => {
+    try {
+        const { image_url, caption, category } = req.body;
+        const { rows } = await pool.query(
+            'INSERT INTO gallery_items (image_url, caption, category) VALUES ($1, $2, $3) RETURNING *',
+            [image_url, caption || '', category || 'general']
+        );
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/gallery/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { caption, category, image_url } = req.body;
+        const { rows } = await pool.query(
+            'UPDATE gallery_items SET caption = $1, category = $2, image_url = COALESCE($4, image_url) WHERE id = $3 RETURNING *',
+            [caption, category, id, image_url]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/gallery/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { rows } = await pool.query('DELETE FROM gallery_items WHERE id = $1 RETURNING *', [id]);
+        if (rows.length > 0) {
+            // Optional: Delete file from filesystem
+            try {
+                const imageUrl = rows[0].image_url;
+                const filename = imageUrl.split('/').pop();
+                const filePath = path.join(galleryDir, filename);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            } catch (e) {
+                console.error('Error deleting gallery file:', e);
+            }
+        }
+        res.json({ message: 'Gallery item deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
