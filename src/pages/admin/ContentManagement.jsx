@@ -5,7 +5,7 @@ import './ContentManagement.css'
 import AdminSidebar from '../../components/AdminSidebar'
 
 function ContentManagement() {
-    const [activeTab, setActiveTab] = useState('contact')
+    const [activeTab, setActiveTab] = useState('about')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [error, setError] = useState(null)
@@ -37,6 +37,14 @@ function ContentManagement() {
     const [caption, setCaption] = useState('')
     const [category, setCategory] = useState('')
     const [editingId, setEditingId] = useState(null)
+
+    // About Us Data State
+    const [aboutMain, setAboutMain] = useState({ title: '', content: '' })
+    const [aboutHistory, setAboutHistory] = useState({ title: '', content: '' })
+    const [aboutVision, setAboutVision] = useState({ title: '', content: '', icon: 'Target' })
+    const [aboutMission, setAboutMission] = useState({ title: '', content: '', icon: 'Award' })
+    const [aboutCommunity, setAboutCommunity] = useState({ title: '', content: '', icon: 'Users' })
+    const [aboutValues, setAboutValues] = useState({ title: '', content: '', icon: 'Heart' })
 
     useEffect(() => {
         fetchData()
@@ -86,6 +94,14 @@ function ContentManagement() {
                         setActivitySchedule([])
                     }
                 }
+            } else if (activeTab === 'about') {
+                const data = await api.content.list()
+                if (data.about_main) setAboutMain({ title: data.about_main.title || '', content: data.about_main.content || '' })
+                if (data.about_history) setAboutHistory({ title: data.about_history.title || '', content: data.about_history.content || '' })
+                if (data.about_vision) setAboutVision({ title: data.about_vision.title || '', content: data.about_vision.content || '', icon: data.about_vision.icon || 'Target' })
+                if (data.about_mission) setAboutMission({ title: data.about_mission.title || '', content: data.about_mission.content || '', icon: data.about_mission.icon || 'Award' })
+                if (data.about_community) setAboutCommunity({ title: data.about_community.title || '', content: data.about_community.content || '', icon: data.about_community.icon || 'Users' })
+                if (data.about_values) setAboutValues({ title: data.about_values.title || '', content: data.about_values.content || '', icon: data.about_values.icon || 'Heart' })
             }
         } catch (err) {
             console.error('Error fetching data:', err)
@@ -294,6 +310,30 @@ function ContentManagement() {
         }
     }
 
+    // About Handlers
+    const handleSaveAbout = async (e) => {
+        e.preventDefault()
+        setSaving(true)
+        setError(null)
+        setSuccess(null)
+        try {
+            await api.content.update('about_main', aboutMain)
+            await api.content.update('about_history', aboutHistory)
+            await api.content.update('about_vision', aboutVision)
+            await api.content.update('about_mission', aboutMission)
+            await api.content.update('about_community', aboutCommunity)
+            await api.content.update('about_values', aboutValues)
+
+            setSuccess('Konten Tentang Kami berhasil diperbarui')
+            setTimeout(() => setSuccess(null), 3000)
+        } catch (err) {
+            console.error('Error saving about content:', err)
+            setError('Gagal menyimpan konten: ' + err.message)
+        } finally {
+            setSaving(false)
+        }
+    }
+
     if (loading && !galleryItems.length && !contactData.address) return <div className="loading-state"><Loader className="spin" size={32} /></div>
 
     return (
@@ -308,6 +348,12 @@ function ContentManagement() {
                     </header>
 
                     <div className="tabs">
+                        <button
+                            className={`tab-btn ${activeTab === 'about' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('about')}
+                        >
+                            Tentang Kami
+                        </button>
                         <button
                             className={`tab-btn ${activeTab === 'contact' ? 'active' : ''}`}
                             onClick={() => setActiveTab('contact')}
@@ -343,7 +389,122 @@ function ContentManagement() {
                             </div>
                         )}
 
-                        {activeTab === 'contact' ? (
+                        {activeTab === 'about' ? (
+                            <form onSubmit={handleSaveAbout}>
+                                {/* Main Section */}
+                                <div className="card-header">
+                                    <h2>Bagian Utama</h2>
+                                </div>
+                                <div className="form-group">
+                                    <label>Judul Utama</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={aboutMain.title}
+                                        onChange={e => setAboutMain({ ...aboutMain, title: e.target.value })}
+                                        placeholder="Tentang Kami"
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Deskripsi Singkat</label>
+                                    <textarea
+                                        className="form-input"
+                                        rows="3"
+                                        value={aboutMain.content}
+                                        onChange={e => setAboutMain({ ...aboutMain, content: e.target.value })}
+                                        placeholder="Deskripsi singkat perkumpulan..."
+                                    />
+                                </div>
+
+                                <hr style={{ margin: '2rem 0', border: '0', borderTop: '1px solid #eee' }} />
+
+                                {/* History Section */}
+                                <div className="card-header">
+                                    <h2>Sejarah</h2>
+                                </div>
+                                <div className="form-group">
+                                    <label>Judul Bagian Sejarah</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        value={aboutHistory.title}
+                                        onChange={e => setAboutHistory({ ...aboutHistory, title: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Konten Sejarah</label>
+                                    <textarea
+                                        className="form-input"
+                                        rows="6"
+                                        value={aboutHistory.content}
+                                        onChange={e => setAboutHistory({ ...aboutHistory, content: e.target.value })}
+                                        placeholder="Ceritakan sejarah berdirinya..."
+                                    />
+                                </div>
+
+                                <hr style={{ margin: '2rem 0', border: '0', borderTop: '1px solid #eee' }} />
+
+                                {/* Cards Grid for Vision, Mission, Community, Values */}
+                                <div className="card-header">
+                                    <h2>Poin-Poin Utama (Visi, Misi, dll)</h2>
+                                </div>
+                                <div className="cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                                    {[
+                                        { state: aboutVision, setState: setAboutVision, label: 'Visi' },
+                                        { state: aboutMission, setState: setAboutMission, label: 'Misi' },
+                                        { state: aboutCommunity, setState: setAboutCommunity, label: 'Komunitas' },
+                                        { state: aboutValues, setState: setAboutValues, label: 'Nilai' }
+                                    ].map((item, idx) => (
+                                        <div key={idx} style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                                            <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>{item.label}</h4>
+
+                                            <div className="form-group">
+                                                <label>Ikon</label>
+                                                <select
+                                                    className="form-input"
+                                                    value={item.state.icon}
+                                                    onChange={e => item.setState({ ...item.state, icon: e.target.value })}
+                                                >
+                                                    <option value="Target">🎯 Target (Visi)</option>
+                                                    <option value="Award">🎖️ Award (Misi/Prestasi)</option>
+                                                    <option value="Users">👥 Users (Komunitas)</option>
+                                                    <option value="Heart">❤️ Heart (Nilai/Passion)</option>
+                                                    <option value="Star">⭐ Star</option>
+                                                    <option value="Trophy">🏆 Trophy</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Judul</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    value={item.state.title}
+                                                    onChange={e => item.setState({ ...item.state, title: e.target.value })}
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Konten</label>
+                                                <textarea
+                                                    className="form-input"
+                                                    rows="4"
+                                                    value={item.state.content}
+                                                    onChange={e => item.setState({ ...item.state, content: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="form-actions" style={{ marginTop: '2rem' }}>
+                                    <button type="submit" className="btn btn-primary" disabled={saving}>
+                                        {saving ? <Loader size={18} className="spin" /> : <Save size={18} />}
+                                        Simpan Perubahan
+                                    </button>
+                                </div>
+                            </form>
+                        ) : activeTab === 'contact' ? (
                             <form onSubmit={handleSaveContact}>
                                 <div className="card-header">
                                     <h2>Edit Kontak</h2>
